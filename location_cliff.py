@@ -509,7 +509,7 @@ if __name__ == '__main__':
     ############
     int_reg = True
     AGO_ind = False
-    country_list = ['PAN']
+    country_list = ['ENV_INT','ENV_NIC','ENV_SLB','ENV_NGA','ENV_SLV','ENV_GTA','ENV_PAN']
     source_domains = db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : country_list}})
     
     # source_domains = ['divergentes.com', 'revistafactum.com', 'alharaca.sv']

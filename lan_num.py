@@ -62,7 +62,8 @@ countries = [
     # ('Indonisia', 'IDN')
     # ('Congo' , 'COD')
     # ('Kazakhstan','KAZ')
-    ('Burkina Faso', 'BFA')
+    # ('Burkina Faso', 'BFA')
+    ('Env Int', 'ENV_INT')
     
     ]
 
