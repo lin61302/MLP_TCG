@@ -134,7 +134,7 @@ class EventClassifier:
             top1_label = self.label_dict[top1_idx]
 
             # Only assign top2_label if its probability > 0.3
-            if top2_prob > 0.3:
+            if top2_prob >= 0.3:
                 top2_label = self.label_dict[top2_idx]
             else:
                 top2_label = None
