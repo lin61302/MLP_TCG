@@ -10,7 +10,7 @@ import torch
 import numpy as np
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-from helpers import build_combined 
+from helpers import build_combined
 import subprocess
 
 _ROOT = Path(os.path.abspath(os.path.dirname(__file__))).as_posix()
@@ -50,7 +50,6 @@ class EventClassifier:
         Load the *tokenizer* from the official Hugging Face model page,
         then load your local *fine-tuned* weights. Bypasses local tokenizer.json.
         """
-        # Path to your locally fine-tuned weights
         model_path = Path(self.model_location) / self.model_name
         model_path_str = model_path.as_posix()
         print(f"Loading local fine-tuned ModernBERT from: {model_path_str}")
@@ -80,10 +79,14 @@ class EventClassifier:
             filter={
                 'include': True,
                 'primary_location': {
-                    '$in': ['ENV_INT','ENV_NIC','ENV_SLB','ENV_NGA','ENV_SLV','ENV_GTA','ENV_PAN']
+                    '$in': [
+                        'ENV_INT','ENV_NIC','ENV_SLB',
+                        'ENV_NGA','ENV_SLV','ENV_GTA','ENV_PAN'
+                    ]
                 }
             }
         )
+        # Only fetch docs that do NOT yet have self.model_name
         self.cursor = self.db[colname].find(
             { 
                 self.model_name: {'$exists': False},
@@ -120,20 +123,36 @@ class EventClassifier:
         self.all_model_outputs = []
 
         for row in probs:
-            sorted_indices = np.argsort(row)
+            sorted_indices = np.argsort(row)  # ascending order
             top1_idx = sorted_indices[-1]
             top2_idx = sorted_indices[-2]
 
-            top1_label = self.label_dict[top1_idx]
-            top2_label = self.label_dict[top2_idx]
+            top1_prob = float(row[top1_idx])
+            top2_prob = float(row[top2_idx])
 
-            label_scores = {self.label_dict[i]: float(row[i]) for i in range(len(row))}
+            # Always assign the top1 label
+            top1_label = self.label_dict[top1_idx]
+
+            # Only assign top2_label if its probability > 0.3
+            if top2_prob > 0.3:
+                top2_label = self.label_dict[top2_idx]
+            else:
+                top2_label = None
+
+            # Build a dictionary of all label->score
+            label_scores = {
+                self.label_dict[i]: float(row[i]) for i in range(len(row))
+            }
 
             self.top1_labels.append(top1_label)
             self.top2_labels.append(top2_label)
             self.all_model_outputs.append(label_scores)
 
     def insert_info(self):
+        """
+        Update DB with env_max = top1 label, env_sec = top2 label (or None if top2 prob <= 0.3),
+        plus the full model_outputs dict.
+        """
         for nn, doc in enumerate(self.queue):
             try:
                 colname = f"articles-{doc['date_publish'].year}-{doc['date_publish'].month}"
@@ -190,6 +209,7 @@ class EventClassifier:
 
                 for doc in data_month:
                     self.queue.append(doc)
+                    # Classify in chunks of batch_size*10
                     if len(self.queue) >= (self.batch_size * 10):
                         self.classify_articles()
                         self.insert_info()
