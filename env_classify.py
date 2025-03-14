@@ -13,6 +13,9 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from helpers import build_combined
 import subprocess
 
+# NEW: Import tqdm for progress bars
+from tqdm import tqdm
+
 _ROOT = Path(os.path.abspath(os.path.dirname(__file__))).as_posix()
 
 def get_data_path(path):
@@ -41,20 +44,22 @@ class EventClassifier:
         self.device = "cuda" if (torch.cuda.is_available() and n_gpu > 0) else "cpu"
 
     def get_db_info(self):
+        """
+        Fetch info needed from the DB and set up label_dict for label index -> label name.
+        """
         self.db = MongoClient(self.uri).ml4p
         self.model_info = self.db.models.find_one({'model_name': self.model_name})
         self.label_dict = {v: k for k, v in self.model_info.get('event_type_nums').items()}
 
     def load_model(self):
         """
-        Load the *tokenizer* from the official Hugging Face model page,
-        then load your local *fine-tuned* weights. Bypasses local tokenizer.json.
+        Load the tokenizer from HF and then load local fine-tuned ModernBERT weights.
+        Bypasses any local tokenizer.json by using trust_remote_code with base_model_id.
         """
         model_path = Path(self.model_location) / self.model_name
         model_path_str = model_path.as_posix()
         print(f"Loading local fine-tuned ModernBERT from: {model_path_str}")
 
-        # 1) Load the original tokenizer from HF
         base_model_id = "answerdotai/ModernBERT-large"
         print(f"Loading tokenizer from: {base_model_id}")
         self.tokenizer = AutoTokenizer.from_pretrained(
@@ -62,7 +67,6 @@ class EventClassifier:
             trust_remote_code=True
         )
 
-        # 2) Load the locally fine-tuned classification model
         self.model = AutoModelForSequenceClassification.from_pretrained(
             model_path_str,
             trust_remote_code=True
@@ -71,8 +75,12 @@ class EventClassifier:
         self.model.eval()
 
     def generate_cursor(self, date):
+        """
+        Create a Mongo cursor for articles in the monthly collection 
+        that do NOT have self.model_name set and meet certain conditions.
+        """
         colname = f'articles-{date.year}-{date.month}'
-        print("Colname", colname)
+        print(f"Colname: {colname}")
 
         source_domains = self.db.sources.distinct(
             'source_domain',
@@ -80,30 +88,45 @@ class EventClassifier:
                 'include': True,
                 'primary_location': {
                     '$in': [
-                        'ENV_INT','ENV_NIC','ENV_SLB',
-                        'ENV_NGA','ENV_SLV','ENV_GTA','ENV_PAN'
+                        'CRI','PAK','HND','NIC','SLV','GTM','PAN'
                     ]
                 }
             }
         )
-        # Only fetch docs that do NOT yet have self.model_name
         self.cursor = self.db[colname].find(
             { 
                 self.model_name: {'$exists': False},
                 'language_translated': 'en',
-                'title_translated': {'$exists': True, '$ne': '', '$ne': None, '$type': 'string'},
-                'maintext_translated': {'$exists': True, '$ne': '', '$ne': None, '$type': 'string'},
+                'title_translated': {
+                    '$exists': True, 
+                    '$ne': '', 
+                    '$ne': None, 
+                    '$type': 'string'
+                },
+                'maintext_translated': {
+                    '$exists': True, 
+                    '$ne': '', 
+                    '$ne': None, 
+                    '$type': 'string'
+                },
                 'source_domain': {'$in': source_domains},
                 'date_publish': {'$exists': True, '$ne': '', '$ne': None}
             }
         )
 
     def check_index(self):
+        """
+        Ensure an index on self.model_name.
+        """
         indexes = [list(idx['key'].keys())[0] for idx in self.db.articles.list_indexes()]
         if self.model_name not in indexes:
             self.db.articles.create_index([(self.model_name, 1)], background=True)
 
     def classify_articles(self):
+        """
+        Given docs in self.queue, run them through the model, produce top1/top2 labels (if prob>0.3),
+        and store everything in self.top1_labels, self.top2_labels, self.all_model_outputs.
+        """
         texts = [build_combined(doc) for doc in self.queue]
 
         inputs = self.tokenizer(
@@ -130,16 +153,13 @@ class EventClassifier:
             top1_prob = float(row[top1_idx])
             top2_prob = float(row[top2_idx])
 
-            # Always assign the top1 label
             top1_label = self.label_dict[top1_idx]
-
-            # Only assign top2_label if its probability > 0.3
-            if top2_prob >= 0.3:
+            if top2_prob > 0.3:
                 top2_label = self.label_dict[top2_idx]
             else:
                 top2_label = None
 
-            # Build a dictionary of all label->score
+            # Full distribution
             label_scores = {
                 self.label_dict[i]: float(row[i]) for i in range(len(row))
             }
@@ -150,16 +170,15 @@ class EventClassifier:
 
     def insert_info(self):
         """
-        Update DB with env_max = top1 label, env_sec = top2 label (or None if top2 prob <= 0.3),
-        plus the full model_outputs dict.
+        Update the DB with env_max, env_sec, model_outputs for each doc in self.queue.
         """
         for nn, doc in enumerate(self.queue):
             try:
                 colname = f"articles-{doc['date_publish'].year}-{doc['date_publish'].month}"
             except:
                 try:
-                    date = dateparser.parse(doc['date_publish']).replace(tzinfo=None)
-                    colname = f"articles-{date.year}-{date.month}"
+                    parsed_dt = dateparser.parse(doc['date_publish']).replace(tzinfo=None)
+                    colname = f"articles-{parsed_dt.year}-{parsed_dt.month}"
                 except Exception as err:
                     colname = f"articles-nodate"
                     print(f"Date parsing issue: {err}")
@@ -197,17 +216,21 @@ class EventClassifier:
             freq='M'
         )
 
-        for date in dates:
+        # Outer progress bar: each month
+        for date in tqdm(dates, desc="Monthly Collections"):
             try:
                 self.generate_cursor(date)
-                self.queue = []
                 data_month = list(self.cursor)
+                total_count = len(data_month)
 
-                if len(data_month) == 0:
-                    print('No Articles to Be Updated for', date)
+                if total_count == 0:
+                    print(f'No Articles to Update for {date}')
                     continue
 
-                for doc in data_month:
+                self.queue = []
+
+                # Inner progress bar: docs in this month
+                for doc in tqdm(data_month, desc=f"Classifying docs in {date}", leave=False):
                     self.queue.append(doc)
                     # Classify in chunks of batch_size*10
                     if len(self.queue) >= (self.batch_size * 10):
