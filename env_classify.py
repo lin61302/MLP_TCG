@@ -88,7 +88,8 @@ class EventClassifier:
                 'include': True,
                 'primary_location': {
                     '$in': [
-                        'CRI','PAK','HND','NIC','SLV','GTM','PAN'
+                        # 'CRI','PAK','HND','NIC','SLV','GTM','PAN'
+                        'SLB', 'NGA',
                     ]
                 }
             }
