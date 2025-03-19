@@ -76,7 +76,8 @@ class EventClassifier:
                 'include': True,
                 'primary_location': {
                     '$in': [
-                        'ENV_SLB','ENV_NIC','ENV_NGA','ENV_SLV','ENV_GTM','ENV_PAN',
+                        # 'ENV_SLB','ENV_NIC','ENV_NGA','ENV_SLV','ENV_GTM','ENV_PAN',
+                        'ENV_INT', 'ENV_REG','ENV_CRI'
                         # 'SLB', 'NGA', 'CRI','PAK','HND','NIC','SLV','GTM','PAN'
 
                         ]
