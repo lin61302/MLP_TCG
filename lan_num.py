@@ -63,7 +63,8 @@ countries = [
     # ('Congo' , 'COD')
     # ('Kazakhstan','KAZ')
     # ('Burkina Faso', 'BFA')
-    ('Env Int', 'ENV_INT')
+    # ('Env Int', 'ENV_INT')
+    ('Env Reg', 'ENV_REG')
     
     ]
 
@@ -84,7 +85,7 @@ for ctup in countries:
     ints = [doc['source_domain'] for doc in db['sources'].find({'major_international': True, 'include': True})]
     regionals = [doc['source_domain'] for doc in db['sources'].find({'major_regional': True, 'include': True})]
 
-print(ints)
+# print(ints)
 
 uri = 'mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true'
 # 'interfax.com.ua', 'kyivpost.com', 'pravda.com.ua', 'delo.ua', 'kp.ua'
