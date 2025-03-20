@@ -88,7 +88,7 @@ class EventClassifier:
                 'include': True,
                 'primary_location': {
                     '$in': [
-                        'ENV_INT', 'ENV_REG','ENV_CRI'
+                        'ENV_GTM'
                         # 'CRI','PAK','HND','NIC','SLV','GTM','PAN'
                         # 'SLB', 'NGA',
                     ]
