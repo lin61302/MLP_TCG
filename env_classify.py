@@ -88,9 +88,10 @@ class EventClassifier:
                 'include': True,
                 'primary_location': {
                     '$in': [
-                        'ENV_SLB','ENV_NIC','ENV_NGA','ENV_SLV','ENV_GTM','ENV_PAN','ENV_INT','ENV_REG','ENV_CRI'
+                        # 'ENV_SLB','ENV_NIC','ENV_NGA','ENV_SLV','ENV_GTM','ENV_PAN','ENV_INT','ENV_REG','ENV_CRI'
                         # 'CRI','PAK','HND','NIC','SLV','GTM','PAN'
-                        # 'SLB', 'NGA',
+                        'ENV_GTM',
+                        'CMR','TUN','LKA','UGA','NPL','AGO'
                     ]
                 }
             }
