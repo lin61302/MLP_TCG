@@ -78,9 +78,9 @@ class EventClassifier:
                     '$in': [
                         # 'ENV_SLB','ENV_NIC','ENV_NGA','ENV_SLV','ENV_GTM','ENV_PAN',
                         # 'ENV_INT', 'ENV_REG','ENV_CRI'
-                        'ENV_GTM',
+                        # 'ENV_GTM',
                         'CMR','TUN','LKA','UGA','NPL','AGO'
-                        # 'SLB', 'NGA', 'CRI','PAK','HND','NIC','SLV','GTM','PAN'
+                        # 'SLB', 'NGA', ,'HND','NIC','SLV','GTM','PAN', 'CRI','PAK'
 
                         ]
                 }
@@ -88,7 +88,7 @@ class EventClassifier:
         )
         self.cursor = self.db[colname].find(
             { 
-                self.model_name: {'$exists': False},
+                'environmental_binary': {'$exists': False},
                 'language_translated': 'en',
                 'title_translated': {'$exists': True, '$ne': '', '$ne': None, '$type': 'string'},
                 'maintext_translated': {'$exists': True, '$ne': '', '$ne': None, '$type': 'string'},
