@@ -72,7 +72,7 @@ class EventClassifier:
         """
         colname = f'articles-{date.year}-{date.month}'
         print("Colname", colname)
-        source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : ['CMR','TUN','LKA','UGA','NPL','AGO']}})
+        source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : ['PAN','PRY','ECU','JAM']}})
         # source_domains = ['divergentes.com', 'revistafactum.com', 'alharaca.sv']
         # source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
         # source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
