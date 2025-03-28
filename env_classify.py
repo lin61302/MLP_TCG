@@ -93,7 +93,8 @@ class EventClassifier:
                         # 'SLB', 'NGA', 'HND','NIC','SLV','GTM',
                         # 'ENV_GTM',
                         # 'CMR','TUN','LKA','UGA','NPL','AGO'
-                        'PAN','PRY','ECU','JAM'
+                        # 'PAN','PRY','ECU','JAM'
+                        'ENV_BLR','ENV_BFA','ENV_ALB','ENV_AGO','ENV_NGA','ENV_SLV','ENV_BEN','ENV_PAK','ENV_HND'
                     ]
                 }
             }
