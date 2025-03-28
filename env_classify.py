@@ -90,10 +90,10 @@ class EventClassifier:
                     '$in': [
                         # 'ENV_SLB','ENV_NIC','ENV_NGA','ENV_SLV','ENV_GTM','ENV_PAN','ENV_INT','ENV_REG','ENV_CRI'
                         # 'CRI','PAK','HND','NIC','SLV','GTM','PAN'
-                        'SLB', 'NGA', 'HND','NIC','SLV','GTM',
+                        # 'SLB', 'NGA', 'HND','NIC','SLV','GTM',
                         # 'ENV_GTM',
                         # 'CMR','TUN','LKA','UGA','NPL','AGO'
-                        # 'PAN','PRY','ECU','JAM'
+                        'PAN','PRY','ECU','JAM'
                     ]
                 }
             }
