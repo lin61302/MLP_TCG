@@ -258,7 +258,7 @@ class EventClassifier:
  
 if __name__ == "__main__":
     
-    classify_pipe('mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true', 'RAI', '/home/diego/peace/finetuned-transformers', 128)
+    classify_pipe('mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true', 'civic_new', '/home/diego/peace/finetuned-transformers', 128)
     # civic_new
     # RAI
     # Git operations
