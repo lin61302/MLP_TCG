@@ -9,8 +9,14 @@ from datetime import datetime
 
 import google.generativeai as genai
 
-# Configure Gemini
-genai.configure(api_key="AIzaSyCULAQpCaBSJmgkXkTG792tZ4QMIAzOa68")
+# Read the API key from a text file
+with open("/home/diego/gemini_api_key.txt", "r", encoding="utf-8") as f:
+    api_key = f.read().strip()
+
+# Now configure Gemini using that key
+genai.configure(api_key=api_key)
+
+# Then select your model
 model = genai.GenerativeModel("gemini-2.0-flash-lite")
 
 ##################################
@@ -353,7 +359,7 @@ if __name__ == "__main__":
             db_name="ml4p",
             countries=['SLB', 'NGA', 'HND','NIC','SLV','GTM',],
             #done: "ENV_GTM", "ENV_NGA", 'ENV_SLV', 'ENV_PAN', 'ENV_INT', 'ENV_CRI', 'ENV_SLB','ENV_NIC','ENV_BEN','ENV_PAK','ENV_HND' 
-            
+
             start_year=2012,
             end_year=2025,
             end_month=4,
