@@ -357,9 +357,9 @@ if __name__ == "__main__":
         parser = GeminiBatchGeoParser(
             uri="mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true",
             db_name="ml4p",
-            countries=['SLB', 'NGA', 'HND','NIC','SLV','GTM',],
+            countries=['PAN','CRI'],
             #done: "ENV_GTM", "ENV_NGA", 'ENV_SLV', 'ENV_PAN', 'ENV_INT', 'ENV_CRI', 'ENV_SLB','ENV_NIC','ENV_BEN','ENV_PAK','ENV_HND' 
-
+            # 'SLB', 'NGA', 'HND','NIC','SLV','GTM',
             start_year=2012,
             end_year=2025,
             end_month=4,

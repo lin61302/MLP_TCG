@@ -95,7 +95,8 @@ class EventClassifier:
                         # 'CMR','TUN','LKA','UGA','NPL','AGO'
                         # 'PAN','PRY','ECU','JAM'
                         # 'ENV_BLR','ENV_BFA','ENV_ALB','ENV_AGO','ENV_NGA','ENV_SLV','ENV_BEN','ENV_PAK','ENV_HND'
-                        'GEO','TLS','MOZ','MLI','KAZ','ARM'
+                        # 'GEO','TLS','MOZ','MLI','KAZ','ARM'
+                        'CRI','PAN'
                     ]
                 }
             }
