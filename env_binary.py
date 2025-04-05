@@ -213,7 +213,7 @@ if __name__ == "__main__":
         'mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true',
         'env_binary',
         '/home/diego/peace/modernbert_models',
-        128
+        32
     )
 
     commit_message = "Updated ModernBERT classifier for binary environmental classification"
