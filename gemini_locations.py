@@ -168,6 +168,9 @@ class GeminiBatchGeoParser:
             })
         ]
 
+        loc = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
+        loc += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
+
         env_query = {
             "source_domain": {'$in': loc},
             "environmental_binary.result": "Yes",
