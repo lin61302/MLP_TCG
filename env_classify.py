@@ -82,27 +82,27 @@ class EventClassifier:
         colname = f'articles-{date.year}-{date.month}'
         print(f"Colname: {colname}")
 
-        # source_domains = self.db.sources.distinct(
-        #     'source_domain',
-        #     filter={
-        #         'include': True,
-        #         'primary_location': {
-        #             '$in': [
-        #                 # 'ENV_SLB','ENV_NIC','ENV_NGA','ENV_SLV','ENV_GTM','ENV_PAN','ENV_INT','ENV_REG','ENV_CRI'
-        #                 # 'CRI','PAK','HND','NIC','SLV','GTM','PAN'
-        #                 # 'SLB', 'NGA', 'HND','NIC','SLV','GTM',
-        #                 # 'ENV_GTM',
-        #                 # 'CMR','TUN','LKA','UGA','NPL','AGO'
-        #                 # 'PAN','PRY','ECU','JAM'
-        #                 # 'ENV_BLR','ENV_BFA','ENV_ALB','ENV_AGO','ENV_NGA','ENV_SLV','ENV_BEN','ENV_PAK','ENV_HND'
-        #                 # 'GEO','TLS','MOZ','MLI','KAZ','ARM'
-        #                 'CRI','PAN'
-        #             ]
-        #         }
-        #     }
-        # )
-        source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
-        source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
+        source_domains = self.db.sources.distinct(
+            'source_domain',
+            filter={
+                'include': True,
+                'primary_location': {
+                    '$in': [
+                        # 'ENV_SLB','ENV_NIC','ENV_NGA','ENV_SLV','ENV_GTM','ENV_PAN','ENV_INT','ENV_REG','ENV_CRI'
+                        # 'CRI','PAK','HND','NIC','SLV','GTM','PAN'
+                        # 'SLB', 'NGA', 'HND','NIC','SLV','GTM',
+                        # 'ENV_GTM',
+                        # 'CMR','TUN','LKA','UGA','NPL','AGO'
+                        # 'PAN','PRY','ECU','JAM'
+                        # 'ENV_BLR','ENV_BFA','ENV_ALB','ENV_AGO','ENV_NGA','ENV_SLV','ENV_BEN','ENV_PAK','ENV_HND'
+                        # 'GEO','TLS','MOZ','MLI','KAZ','ARM'
+                        'CRI','PAN'
+                    ]
+                }
+            }
+        )
+        # source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
+        # source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
 
         self.cursor = self.db[colname].find(
             { 
