@@ -85,7 +85,8 @@ class EventClassifier:
                         # 'ENV_BLR','ENV_BFA','ENV_ALB','ENV_AGO','ENV_NGA','ENV_SLV','ENV_BEN','ENV_PAK','ENV_HND'
                         # 'GEO','TLS','MOZ','MLI','KAZ','ARM'
                         # 'CRI','PAN'
-                        'MAR','SSD','TZA','RWA','ZWE','COD','NER', 
+                        # 'MAR','SSD','TZA','RWA','ZWE','COD','NER', 
+                        'ENV_INT'
                         # 'ETH','MRT','GHA','ALB', 'BEN',
                         
 
