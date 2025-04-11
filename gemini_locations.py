@@ -160,16 +160,16 @@ class GeminiBatchGeoParser:
         self.batch_size = batch_size
 
     def fetch_articles(self):
-        loc = [
-            doc['source_domain']
-            for doc in self.db['sources'].find({
-                'primary_location': {'$in': self.countries},
-                'include': True
-            })
-        ]
+        # loc = [
+        #     doc['source_domain']
+        #     for doc in self.db['sources'].find({
+        #         'primary_location': {'$in': self.countries},
+        #         'include': True
+        #     })
+        # ]
 
-        # loc = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
-        # loc += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
+        loc = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
+        loc += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
 
         env_query = {
             "source_domain": {'$in': loc},
