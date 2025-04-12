@@ -160,16 +160,16 @@ class GeminiBatchGeoParser:
         self.batch_size = batch_size
 
     def fetch_articles(self):
-        # loc = [
-        #     doc['source_domain']
-        #     for doc in self.db['sources'].find({
-        #         'primary_location': {'$in': self.countries},
-        #         'include': True
-        #     })
-        # ]
+        loc = [
+            doc['source_domain']
+            for doc in self.db['sources'].find({
+                'primary_location': {'$in': self.countries},
+                'include': True
+            })
+        ]
 
-        loc = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
-        loc += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
+        # loc = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
+        # loc += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
 
         env_query = {
             "source_domain": {'$in': loc},
@@ -362,7 +362,8 @@ if __name__ == "__main__":
             db_name="ml4p",
             countries=['PAN','CRI'],
             #done: "ENV_GTM", "ENV_NGA", 'ENV_SLV', 'ENV_PAN', 'ENV_INT', 'ENV_CRI', 'ENV_SLB','ENV_NIC','ENV_BEN','ENV_PAK','ENV_HND' 
-            # 'SLB', 'NGA', 'HND','NIC','SLV','GTM','PAN','CRI', 'CMR','TUN','LKA','UGA','NPL','AGO'
+            # 'SLB', 'NGA', 'HND','NIC','SLV','GTM','PAN','CRI', 'CMR','TUN','LKA','UGA','NPL','AGO', 
+            # 'PAN','CRI'
             start_year=2012,
             end_year=2025,
             end_month=4,

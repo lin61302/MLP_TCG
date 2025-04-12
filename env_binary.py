@@ -86,8 +86,9 @@ class EventClassifier:
                         # 'GEO','TLS','MOZ','MLI','KAZ','ARM'
                         # 'CRI','PAN'
                         # 'MAR','SSD','TZA','RWA','ZWE','COD','NER', 
-                        'ENV_INT'
+                        # 'ENV_INT'
                         # 'ETH','MRT','GHA','ALB', 'BEN',
+                        'PAN','CRI'
                         
 
                         ]
