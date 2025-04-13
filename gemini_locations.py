@@ -360,11 +360,15 @@ if __name__ == "__main__":
         parser = GeminiBatchGeoParser(
             uri="mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true",
             db_name="ml4p",
-            countries=['MAR','SSD','TZA','RWA','ZWE','COD','NER', ],
+            countries=['TLS', 'GEO', 'PRY', 'ECU', 'MLI', 'JAM', 'KAZ' ,'ARM','MOZ' ],
             #done: "ENV_GTM", "ENV_NGA", 'ENV_SLV', 'ENV_PAN', 'ENV_INT', 'ENV_CRI', 'ENV_SLB','ENV_NIC','ENV_BEN','ENV_PAK','ENV_HND' 
             # 'SLB', 'NGA', 'HND','NIC','SLV','GTM','PAN','CRI', 'CMR','TUN','LKA','UGA','NPL', 
             # 'PAN','CRI'
+            #processing 1: 'MAR','SSD','TZA','RWA','ZWE','COD','NER',
+            #  
+
             # ,'AGO'
+
             start_year=2012,
             end_year=2025,
             end_month=4,

@@ -87,8 +87,9 @@ class EventClassifier:
                         # 'CRI','PAN'
                         # 'MAR','SSD','TZA','RWA','ZWE','COD','NER', 
                         # 'ENV_INT'
-                        # 'ETH','MRT','GHA','ALB', 'BEN',
-                        'PAN','CRI'
+                        'ETH','MRT','GHA','ALB', 'BEN', 'PAK', 'ALB'
+                        # 'PAN','CRI'
+                        
                         
 
                         ]
