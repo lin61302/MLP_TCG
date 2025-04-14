@@ -87,9 +87,10 @@ class EventClassifier:
                         # 'CRI','PAN'
                         # 'MAR','SSD','TZA','RWA','ZWE','COD','NER', 
                         # 'ENV_INT'
-                        'ETH','MRT','GHA','ALB', 'BEN', 'PAK', 'ALB'
+                        # 'ETH','MRT','GHA','ALB', 'BEN', 'PAK',
                         # 'PAN','CRI'
-                        
+                        'ARM'
+                        # 'ENV_AGO', 'ENV_AZE', 'ENV_BLR', 'ENV_CMR', 'ENV_BGD', 'ENV_DZA', 'ENV_COL', 'ENV_DOM', 'ENV_UZB', 'ENV_KAZ', 'ENV_KGZ' 
                         
 
                         ]
