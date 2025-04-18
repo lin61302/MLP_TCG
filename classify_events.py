@@ -72,7 +72,7 @@ class EventClassifier:
         """
         colname = f'articles-{date.year}-{date.month}'
         print("Colname", colname)
-        source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : ['ARM']}})
+        source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : ['PHL','BFA','AGO','AZE','MWI','BLR','BGD','HUN','XKX','MYS']}})
         # source_domains = ['divergentes.com', 'revistafactum.com', 'alharaca.sv']
         # source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
         # source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
@@ -258,7 +258,7 @@ class EventClassifier:
  
 if __name__ == "__main__":
     
-    classify_pipe('mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true', 'civic_new', '/home/diego/peace/finetuned-transformers', 128)
+    classify_pipe('mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true', 'RAI', '/home/diego/peace/finetuned-transformers', 128)
     # civic_new
     # RAI
     # Git operations
