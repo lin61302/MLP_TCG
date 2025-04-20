@@ -102,7 +102,8 @@ class EventClassifier:
                         # 'ETH','MRT','GHA','ALB', 'BEN', 'PAK',
                         # 'ARM'
                         # 'ENV_AGO', 'ENV_AZE', 'ENV_BLR', 'ENV_CMR', 'ENV_BGD', 'ENV_DZA', 'ENV_COL', 'ENV_DOM', 'ENV_UZB', 'ENV_KAZ', 'ENV_KGZ'
-                        'IND'
+                        # 'IND'
+                        'AGO'
                     ]
                 }
             }
