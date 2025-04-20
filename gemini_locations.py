@@ -354,13 +354,13 @@ Here are the articles:
 
 if __name__ == "__main__":
     # We'll iterate over decreasing batch sizes
-    batch_sizes = [15, 10, 5, 1]
+    batch_sizes = [ 10, 5, 1]
     for bs in batch_sizes:
         print(f"\n\n=== Starting parser with batch_size={bs} ===")
         parser = GeminiBatchGeoParser(
             uri="mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true",
             db_name="ml4p",
-            countries=[ 'ENV_AGO', 'ENV_AZE', 'ENV_BLR', 'ENV_CMR', 'ENV_BGD', 'ENV_DZA', 'ENV_COL', 'ENV_DOM', 'ENV_UZB', 'ENV_KAZ', 'ENV_KGZ'],
+            countries=[ 'IND'],
             #done: "ENV_GTM", "ENV_NGA", 'ENV_SLV', 'ENV_PAN', 'ENV_INT', 'ENV_CRI', 'ENV_SLB','ENV_NIC','ENV_BEN','ENV_PAK','ENV_HND' 
             # 'SLB', 'NGA', 'HND','NIC','SLV','GTM','PAN','CRI', 'CMR','TUN','LKA','UGA','NPL', 
             # 'PAN','CRI'
@@ -368,6 +368,7 @@ if __name__ == "__main__":
             #  processing 2: 'TLS', 'GEO', 'PRY', 'ECU', 'MLI', 'JAM', 'KAZ' ,'ARM','MOZ'
             # 'ETH','MRT','GHA','ALB', 'BEN', 'PAK',
             # ,'AGO'
+            # IND
 
             start_year=2012,
             end_year=2025,
