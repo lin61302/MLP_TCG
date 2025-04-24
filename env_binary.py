@@ -92,7 +92,8 @@ class EventClassifier:
                         # 'ARM'
                         # 'ENV_AGO', 'ENV_AZE', 'ENV_BLR', 'ENV_CMR', 'ENV_BGD', 'ENV_DZA', 'ENV_COL', 'ENV_DOM', 'ENV_UZB', 'ENV_KAZ', 'ENV_KGZ' 
                         # 'IND'
-                        'PHL','BFA','AGO','AZE','MWI','BLR','BGD','HUN','XKX','MYS'
+                        # 'PHL','BFA','AGO','AZE','MWI','BLR','BGD','HUN','XKX','MYS'
+                        'MOZ', 'ARM'
                         
 
                         ]
