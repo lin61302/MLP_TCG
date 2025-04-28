@@ -107,7 +107,8 @@ class EventClassifier:
                         # 'PHL','BFA','AGO','AZE','MWI','BLR','BGD','HUN','XKX','MYS',
                         # 'MOZ', 'ARM'
                         # 'ENV_BLR','ENV_BGD', 'ENV_DZA', 'ENV_COL', 'ENV_GHA', 'ENV_GEO', 'ENV_HUN', 'ENV_JAM', 'ENV_SLV'
-                        'IDN','PAN','MKD','KGZ','MDA','SEN','SRB','LBR','NAM'
+                        # 'IDN','PAN','MKD','KGZ','MDA','SEN','SRB','LBR','NAM'
+                        'ENV_CMR','ENV_UZB','ENV_KHM','ENV_LBR'
                     ]
                 }
             }
