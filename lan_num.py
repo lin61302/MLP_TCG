@@ -77,7 +77,12 @@ countries = [
     # ('env geo', 'ENV_GEO')
     # ('env hun', 'ENV_HUN')
     # ('env khm','ENV_KHM')
-    ('env lbr','ENV_LBR')
+    # ('env lbr','ENV_LBR')
+    # ('env mda','ENV_MDA')
+    # ('env mkd','ENV_MKD')
+    # ('env cod','ENV_COD')
+    # ('env kgz','ENV_KGZ')
+    ('env lka','ENV_LKA')
     ]
 
 db = MongoClient(uri).ml4p
