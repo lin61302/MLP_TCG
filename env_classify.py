@@ -109,7 +109,8 @@ class EventClassifier:
                         # 'ENV_BLR','ENV_BGD', 'ENV_DZA', 'ENV_COL', 'ENV_GHA', 'ENV_GEO', 'ENV_HUN', 'ENV_JAM', 'ENV_SLV'
                         # 'IDN','PAN','MKD','KGZ','MDA','SEN','SRB','LBR','NAM'
                         # 'ENV_CMR','ENV_UZB','ENV_KHM','ENV_LBR'
-                         'ENV_AZE','ENV_KGZ','ENV_IDN','ENV_MDA','ENV_MKD','ENV_COD','ENV_KAZ','ENV_LKA','ENV_ECU','ENV_GTM'
+                        #  'ENV_AZE','ENV_KGZ','ENV_IDN','ENV_MDA','ENV_MKD','ENV_COD','ENV_KAZ','ENV_LKA','ENV_ECU','ENV_GTM'
+                        'COL','TUR','PER','UZB'
                     ]
                 }
             }
