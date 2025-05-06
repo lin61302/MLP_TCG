@@ -124,10 +124,10 @@ def main():
 
 
     
-    lan = 'az'
+    lan = 'uz'
     #lan = az, uz, ka, ne, sw, sr, am
     # src = ['english.onlinekhabar.com', 'en.setopati.com', 'thehimalayantimes.com', 'kathmandupost.com', 'nepalitimes.com']
-    src = db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : ['AZE']}})
+    src = db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : ['ENV_UZB']}})
     # src = db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
     print(src)
 
