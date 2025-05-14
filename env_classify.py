@@ -112,7 +112,7 @@ class EventClassifier:
                         #  'ENV_AZE','ENV_KGZ','ENV_IDN','ENV_MDA','ENV_MKD','ENV_COD','ENV_KAZ','ENV_LKA','ENV_ECU','ENV_GTM'
                         # 'COL','TUR','PER','UZB'
                         # 'ENV_CMR','ENV_BGD','ENV_UZB','ENV_HUN','ENV_GEO','ENV_GHA','ENV_JAM','ENV_MWI','ENV_MRT','ENV_NER'
-                        'ARM'
+                        'NIC'
                     ]
                 }
             }
