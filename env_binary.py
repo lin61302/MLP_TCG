@@ -102,7 +102,8 @@ class EventClassifier:
                         # 'COL','TUR','PER','UZB'
                         # 'ENV_CMR','ENV_BGD','ENV_UZB','ENV_HUN','ENV_GEO','ENV_GHA','ENV_JAM','ENV_MWI','ENV_MRT','ENV_NER'
                         # 'ARM'
-                        'UKR','DOM','ZMB','KEN'
+                        # 'UKR','DOM','ZMB','KEN'
+                        'NIC'
                         
 
                         ]
