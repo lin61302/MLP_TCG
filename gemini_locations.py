@@ -360,7 +360,7 @@ if __name__ == "__main__":
         parser = GeminiBatchGeoParser(
             uri="mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true",
             db_name="ml4p",
-            countries=['ENV_COL','ENV_TUN','ENV_BLR','ENV_PRY','ENV_UGA','ENV_ETH','ENV_IDN','ENV_KHM','ENV_LBR','ENV_COD','ENV_MLI','ENV_NPL'] ,
+            countries=['UKR','DOM','ZMB','KEN'] ,
                 
             #done: "ENV_GTM", "ENV_NGA", 'ENV_SLV', 'ENV_PAN', 'ENV_INT', 'ENV_CRI', 'ENV_SLB','ENV_NIC','ENV_BEN','ENV_PAK','ENV_HND' 
             # 'SLB', 'NGA', 'HND','NIC','SLV','GTM','PAN','CRI', 'CMR','TUN','LKA','UGA','NPL', 
@@ -377,6 +377,7 @@ if __name__ == "__main__":
             # processing 1: 'COL','TUR','PER','UZB'
             # processing 2: 'ENV_CMR','ENV_BGD','ENV_UZB','ENV_HUN','ENV_GEO','ENV_GHA','ENV_JAM','ENV_MWI','ENV_MRT','ENV_NER'
             # 'UKR','DOM','ZMB','KEN'
+            # 'ENV_COL','ENV_TUN','ENV_BLR','ENV_PRY','ENV_UGA','ENV_ETH','ENV_IDN','ENV_KHM','ENV_LBR','ENV_COD','ENV_MLI','ENV_NPL'
             
 
             start_year=2012,
