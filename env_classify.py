@@ -115,7 +115,8 @@ class EventClassifier:
                         # 'NIC'
                         # 'ENV_COL','ENV_TUN','ENV_BLR','ENV_PRY','ENV_UGA','ENV_ETH','ENV_IDN','ENV_KHM','ENV_LBR','ENV_COD','ENV_MLI','ENV_NPL'
                         # 'ENV_ECU'
-                        'UKR', 'DOM', 'ZMB', 'KEN'
+                        # 'UKR', 'DOM', 'ZMB', 'KEN'
+                        'ENV_BLR'
                     ]
                 }
             }
