@@ -107,6 +107,7 @@ class EventClassifier:
                         # 'ENV_COL','ENV_TUN','ENV_BLR','ENV_PRY','ENV_UGA','ENV_ETH','ENV_IDN','ENV_KHM','ENV_LBR','ENV_COD','ENV_MLI','ENV_NPL'
                         # 'UKR','DOM','ZMB','KEN'
                         # 'ENV_ECU'
+                        'UKR', 'DOM', 'ZMB', 'KEN',
                         'ENV_BLR'
 
                         
