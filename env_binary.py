@@ -107,9 +107,9 @@ class EventClassifier:
                         # 'ENV_COL','ENV_TUN','ENV_BLR','ENV_PRY','ENV_UGA','ENV_ETH','ENV_IDN','ENV_KHM','ENV_LBR','ENV_COD','ENV_MLI','ENV_NPL'
                         # 'UKR','DOM','ZMB','KEN'
                         # 'ENV_ECU'
-                        # 'UKR', 'DOM', 'ZMB', 'KEN',
+                        'UKR', 'DOM', 'ZMB', 'KEN',
                         # 'ENV_BLR'
-                        'ENV_DZA','ENV_BLR','ENV_SRB','ENV_TUR','ENV_KEN','ENV_LKA','ENV_MAR','ENV_NAM','ENV_PER','ENV_PHL','ENV_RWA','ENV_UKR',
+                        # 'ENV_DZA','ENV_BLR','ENV_SRB','ENV_TUR','ENV_KEN','ENV_LKA','ENV_MAR','ENV_NAM','ENV_PER','ENV_PHL','ENV_RWA','ENV_UKR',
 
                         
 
