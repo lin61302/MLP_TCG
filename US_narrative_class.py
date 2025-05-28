@@ -14,13 +14,16 @@ from helpers import build_combined
 import subprocess
 from tqdm import tqdm
 
+# NEW: Import tqdm for progress bars
+from tqdm import tqdm
+
 _ROOT = Path(os.path.abspath(os.path.dirname(__file__))).as_posix()
 
 def get_data_path(path):
     return Path('/'.join(_ROOT.split('/')[:-1]), 'data', path).joinpath()
 
 def classify_pipe(uri, model_name, model_location, batch_size):
-    evntclass = EventClassifier(uri, model_name, model_location, batch_size, n_gpu=1)
+    evntclass = NarrativeClassifier(uri, model_name, model_location, batch_size, n_gpu=1)
     evntclass.run()
 
 def run_git_commands(commit_message):
@@ -32,7 +35,7 @@ def run_git_commands(commit_message):
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while running Git commands: {e}")
 
-class EventClassifier:
+class NarrativeClassifier:
     def __init__(self, uri, model_name, model_location, batch_size, n_gpu=1):
         self.uri = uri
         self.model_name = model_name
@@ -51,24 +54,34 @@ class EventClassifier:
 
     def load_model(self):
         """
-        Load the tokenizer and model from the specified directory.
+        Load the tokenizer from HF and then load local fine-tuned ModernBERT weights.
+        Bypasses any local tokenizer.json by using trust_remote_code with base_model_id.
         """
-        model_path = Path(self.model_location) / "environmental_binary"
+        model_path = Path(self.model_location) / self.model_name
         model_path_str = model_path.as_posix()
-        print(f"Loading model from: {model_path_str}")
+        print(f"Loading local fine-tuned ModernBERT from: {model_path_str}")
 
         base_model_id = "answerdotai/ModernBERT-large"
-        self.tokenizer = AutoTokenizer.from_pretrained(base_model_id, trust_remote_code=True)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path_str, trust_remote_code=True)
+        print(f"Loading tokenizer from: {base_model_id}")
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            base_model_id,
+            trust_remote_code=True
+        )
+
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            model_path_str,
+            trust_remote_code=True
+        )
         self.model.to(self.device)
         self.model.eval()
 
     def generate_cursor(self, date):
         """
-        Create a Mongo cursor for articles in the monthly collection that do NOT have self.model_name set.
+        Create a Mongo cursor for articles in the monthly collection 
+        that do NOT have self.model_name set and meet certain conditions.
         """
         colname = f'articles-{date.year}-{date.month}'
-        print(f"Processing collection: {colname}")
+        print(f"Colname: {colname}")
 
         source_domains = self.db.sources.distinct(
             'source_domain',
@@ -76,62 +89,43 @@ class EventClassifier:
                 'include': True,
                 'primary_location': {
                     '$in': [
-                        # 'ENV_SLB','ENV_NIC','ENV_NGA','ENV_SLV','ENV_GTM','ENV_PAN',
-                        # 'ENV_INT', 'ENV_REG','ENV_CRI'
-                        # 'ENV_GTM',
-                        # 'CMR','TUN','LKA','UGA','NPL','AGO'
-                        # 'SLB', 'NGA', 'HND','NIC','SLV','GTM',
-                        # 'PAN','PRY','ECU','JAM'
-                        # 'ENV_BLR','ENV_BFA','ENV_ALB','ENV_AGO','ENV_NGA','ENV_SLV','ENV_BEN','ENV_PAK','ENV_HND'
-                        # 'GEO','TLS','MOZ','MLI','KAZ','ARM'
-                        # 'CRI','PAN'
-                        # 'MAR','SSD','TZA','RWA','ZWE','COD','NER', 
-                        # 'ENV_INT'
-                        # 'ETH','MRT','GHA','ALB', 'BEN', 'PAK',
-                        # 'PAN','CRI'
-                        # 'ARM'
-                        # 'ENV_AGO', 'ENV_AZE', 'ENV_BLR', 'ENV_CMR', 'ENV_BGD', 'ENV_DZA', 'ENV_COL', 'ENV_DOM', 'ENV_UZB', 'ENV_KAZ', 'ENV_KGZ' 
-                        # 'IND'
-                        # 'PHL','BFA','AGO','AZE','MWI','BLR','BGD','HUN','XKX','MYS'
-                        # 'MOZ', 'ARM'
-                        # 'ENV_BLR','ENV_BGD', 'ENV_DZA', 'ENV_COL', 'ENV_GHA', 'ENV_GEO', 'ENV_HUN', 'ENV_JAM', 'ENV_SLV'
-                        # 'IDN','PAN','MKD','KGZ','MDA','SEN','SRB','LBR','NAM'
-                        # 'ENV_CMR','ENV_UZB','ENV_KHM','ENV_LBR'
-                        # 'TUR','UKR','KHM','COL'
-                        # 'ENV_AZE','ENV_KGZ','ENV_IDN','ENV_MDA','ENV_MKD','ENV_COD','ENV_KAZ','ENV_LKA','ENV_ECU','ENV_GTM'
-                        # 'COL','TUR','PER','UZB'
-                        # 'ENV_CMR','ENV_BGD','ENV_UZB','ENV_HUN','ENV_GEO','ENV_GHA','ENV_JAM','ENV_MWI','ENV_MRT','ENV_NER'
-                        # 'ARM'
-                        # 'UKR','DOM','ZMB','KEN'
-                        # 'NIC'
-                        # 'ENV_COL','ENV_TUN','ENV_BLR','ENV_PRY','ENV_UGA','ENV_ETH','ENV_IDN','ENV_KHM','ENV_LBR','ENV_COD','ENV_MLI','ENV_NPL'
-                        # 'UKR','DOM','ZMB','KEN'
-                        # 'ENV_ECU'
-                        # 'UKR', 'DOM', 'ZMB', 'KEN',
-                        # 'ENV_BLR'
-                        # 'ENV_DZA','ENV_BLR','ENV_SRB','ENV_TUR','ENV_KEN','ENV_LKA','ENV_MAR','ENV_NAM','ENV_PER','ENV_PHL','ENV_RWA','ENV_UKR',
-                        'ENV_DZA'
-
-                        
-
-                        ]
+                        'BGD','NGA','UGA','COL'
+                    ]
                 }
             }
         )
-
         # source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
         # source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
 
         self.cursor = self.db[colname].find(
             { 
-                'environmental_binary': {'$exists': False},
+                self.model_name: {'$exists': False},
                 'language_translated': 'en',
-                'title_translated': {'$exists': True, '$ne': '', '$ne': None, '$type': 'string'},
-                'maintext_translated': {'$exists': True, '$ne': '', '$ne': None, '$type': 'string'},
+                'title_translated': {
+                    '$exists': True, 
+                    '$ne': '', 
+                    '$ne': None, 
+                    '$type': 'string'
+                },
+                'maintext_translated': {
+                    '$exists': True, 
+                    '$ne': '', 
+                    '$ne': None, 
+                    '$type': 'string'
+                },
                 'source_domain': {'$in': source_domains},
-                'date_publish': {'$exists': True, '$ne': '', '$ne': None}
+                'date_publish': {'$exists': True, '$ne': '', '$ne': None},
+                'US_narrative_class': {'$exists': False}
             }
         )
+
+    def check_index(self):
+        """
+        Ensure an index on self.model_name.
+        """
+        indexes = [list(idx['key'].keys())[0] for idx in self.db.articles.list_indexes()]
+        if self.model_name not in indexes:
+            self.db.articles.create_index([(self.model_name, 1)], background=True)
 
     def classify_articles(self):
         """
@@ -164,7 +158,7 @@ class EventClassifier:
 
     def insert_info(self):
         """
-        Update the DB with environmental_binary result and model outputs.
+        Update the DB with US_narrative_class result and model outputs.
         """
         for nn, doc in enumerate(self.queue):
             try:
@@ -182,7 +176,7 @@ class EventClassifier:
                     {'_id': doc['_id']},
                     {
                         '$set': {
-                            'environmental_binary': {
+                            'US_narrative_class': {
                                 'result': self.top_labels[nn],
                                 'model_outputs': self.all_model_outputs[nn]
                             }
@@ -194,11 +188,13 @@ class EventClassifier:
 
     def clear_queue(self):
         self.queue = []
-        self.top_labels = []
+        self.top1_labels = []
+        self.top2_labels = []
         self.all_model_outputs = []
 
     def run(self):
         self.get_db_info()
+        self.check_index()
         self.load_model()
 
         dates = pd.date_range(
@@ -207,7 +203,8 @@ class EventClassifier:
             freq='M'
         )
 
-        for date in tqdm(dates, desc="Processing Monthly Collections"):
+        # Outer progress bar: each month
+        for date in tqdm(dates, desc="Monthly Collections"):
             try:
                 self.generate_cursor(date)
                 data_month = list(self.cursor)
@@ -219,14 +216,16 @@ class EventClassifier:
 
                 self.queue = []
 
+                # Inner progress bar: docs in this month
                 for doc in tqdm(data_month, desc=f"Classifying docs in {date}", leave=False):
                     self.queue.append(doc)
-
+                    # Classify in chunks of batch_size*10
                     if len(self.queue) >= (self.batch_size * 10):
                         self.classify_articles()
                         self.insert_info()
                         self.clear_queue()
 
+                # leftover
                 if len(self.queue) > 0:
                     self.classify_articles()
                     self.insert_info()
@@ -239,10 +238,10 @@ class EventClassifier:
 if __name__ == "__main__":
     classify_pipe(
         'mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true',
-        'env_binary',
+        'anti-us_narrative_class',
         '/home/diego/peace/modernbert_models',
         32
     )
 
-    commit_message = "Updated ModernBERT classifier for binary environmental classification"
+    commit_message = "US-narrative class classifier deployment update"
     run_git_commands(commit_message)
