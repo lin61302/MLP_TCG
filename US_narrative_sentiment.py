@@ -115,7 +115,8 @@ class NarrativeClassifier:
                 },
                 'source_domain': {'$in': source_domains},
                 'date_publish': {'$exists': True, '$ne': '', '$ne': None},
-                'US_narrative_sentiment': {'$exists': False}
+                'US_narrative_sentiment': {'$exists': False},
+                'US_narrative_class': {'$in':['Military and DoD', 'Foreign Aid', 'Foreign Policy']}
             }
         )
 
