@@ -53,7 +53,7 @@ class EventClassifier:
         """
         Load the tokenizer and model from the specified directory.
         """
-        model_path = Path(self.model_location) / "environmental_binary"
+        model_path = Path(self.model_location) / self.model_name
         model_path_str = model_path.as_posix()
         print(f"Loading model from: {model_path_str}")
 
@@ -111,7 +111,8 @@ class EventClassifier:
                         # 'ENV_BLR'
                         # 'ENV_DZA','ENV_BLR','ENV_SRB','ENV_TUR','ENV_KEN','ENV_LKA','ENV_MAR','ENV_NAM','ENV_PER','ENV_PHL','ENV_RWA','ENV_UKR',
                         # 'ENV_DZA'
-                        'ENV_KGZ','ENV_MRT','ENV_UZB','ENV_NPL','ENV_ETH','ENV_UGA','ENV_IDN'
+                        # 'ENV_KGZ','ENV_MRT','ENV_UZB','ENV_NPL','ENV_ETH','ENV_UGA','ENV_IDN'
+                        'IND','KGZ','KHM','ZAF', 'DZA'
 
                         
 
