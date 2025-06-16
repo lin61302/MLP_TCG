@@ -89,10 +89,10 @@ class EventClassifier:
                                                                                                                    [
                                                                                                                     #    'COL', 'ECU',  'PRY','JAM','HND', 'SLV', 'NIC','PER', 'DOM','PAN'
                                                                                                                     # 'CRI','SLB', 
-                                                                                                                       'ALB', 'BEN', 'ETH', 'GEO', 'KEN', 'MLI', 'MAR', 'NGA',  
-                                                                                                                       'SRB', 'SEN', 'TZA', 'UGA', 'UKR', 'ZWE', 'MRT', 'ZMB', 'XKX', 'NER',  
-                                                                                                                    #     'PHL', 'GHA', 'RWA', 'GTM', 'BLR', 'KHM', 'COD', 'TUR', 'BGD',
-                                                                                                                    #    'ZAF', 'TUN', 'IDN', 'AGO', 'ARM', 'LKA', 'MYS', 'CMR', 'HUN', 'MWI', 
+                                                                                                                    #    'ALB', 'BEN', 'ETH', 'GEO', 'KEN', 'MLI', 'MAR', 'NGA',  
+                                                                                                                    #    'SRB', 'SEN', 'TZA', 'UGA', 'UKR', 'ZWE', 'MRT', 'ZMB', 'XKX', 'NER',  
+                                                                                                                        'PHL', 'GHA', 'RWA', 'GTM', 'BLR', 'KHM', 'COD', 'TUR', 'BGD',
+                                                                                                                       'ZAF', 'TUN', 'IDN', 'AGO', 'ARM', 'LKA', 'MYS', 'CMR', 'HUN', 'MWI', 
                                                                                                                     #    'UZB', 'IND', 'MOZ', 'AZE', 'KGZ', 'MDA', 'KAZ', 'DZA', 'MKD', 'SSD', 
                                                                                                                     #    'LBR', 'PAK', 'NPL', 'NAM', 'BFA', 'TLS', 
                                                                                                                    ]}})
