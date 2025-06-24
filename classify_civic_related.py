@@ -93,8 +93,9 @@ class EventClassifier:
                                                                                                                     #    'SRB', 'SEN', 'TZA', 'UGA', 'UKR', 'ZWE', 'MRT', 'ZMB', 'XKX', 'NER',  
                                                                                                                     #     'PHL', 'GHA', 'RWA', 'GTM', 'BLR', 'KHM', 'COD', 'TUR', 'BGD',
                                                                                                                     #    'ZAF', 'TUN', 'IDN', 'AGO', 'ARM', 'LKA', 'MYS', 'CMR', 'HUN', 'MWI', 
-                                                                                                                       'UZB', 'IND', 'MOZ', 'AZE', 'KGZ', 'MDA', 'KAZ', 'DZA', 'MKD', 'SSD', 
-                                                                                                                       'LBR', 'PAK', 'NPL', 'NAM', 'BFA', 'TLS', 
+                                                                                                                    #    'UZB', 'IND', 'MOZ', 'AZE', 'KGZ', 'MDA', 'KAZ', 'DZA', 'MKD', 'SSD', 
+                                                                                                                    #    'LBR', 'PAK', 'NPL', 'NAM', 'BFA', 'TLS', 
+                                                                                                                    'MEX'
                                                                                                                    ]}})
         # source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
         # source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})

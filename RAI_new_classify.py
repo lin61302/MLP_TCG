@@ -84,7 +84,7 @@ class EventClassifier:
                                 'PHL', 'GHA', 'RWA', 'GTM', 'BLR', 'KHM', 'COD', 'TUR', 
                                'ZAF', 'TUN', 'IDN', 'AGO', 'ARM', 'LKA', 'MYS', 'CMR', 'HUN', 'MWI', 
                             #    'UZB', 'IND', 'MOZ', 'AZE', 'KGZ', 'MDA', 'KAZ', 'DZA', 'MKD', 'SSD', 
-                            #    'LBR', 'PAK', 'NPL', 'NAM', 'BFA', 'TLS', 
+                            #    'LBR', 'PAK', 'NPL', 'NAM', 'BFA', 'TLS', ‘MEX'
                         
 
                         ]
