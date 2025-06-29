@@ -119,8 +119,9 @@ class EventClassifier:
                         # 'ENV_BLR'
                         # 'ENV_DZA','ENV_BLR','ENV_SRB','ENV_TUR','ENV_KEN','ENV_LKA','ENV_MAR','ENV_NAM','ENV_PER','ENV_PHL','ENV_RWA','ENV_UKR'
                         # 'ENV_KGZ','ENV_MRT','ENV_UZB','ENV_NPL','ENV_ETH','ENV_UGA','ENV_IDN'
-                        'IND','KGZ','KHM','ZAF', 'DZA',
-                        'ENV_KGZ','ENV_MRT','ENV_UZB','ENV_IDN', 'ENV_TUN','ENV_ZAF','ENV_PER','ENV_PRY','ENV_PHL','ENV_RWA','ENV_SEN','ENV_TUR','ENV_XKX','ENV_UKR','ENV_DZA','ENV_ECU','ENV_KEN','ENV_MAR','ENV_MEX','ENV_MYS','ENV_MLI'
+                        # 'IND','KGZ','KHM','ZAF', 'DZA',
+                        # 'ENV_KGZ','ENV_MRT','ENV_UZB','ENV_IDN', 'ENV_TUN','ENV_ZAF','ENV_PER','ENV_PRY','ENV_PHL','ENV_RWA','ENV_SEN','ENV_TUR','ENV_XKX','ENV_UKR','ENV_DZA','ENV_ECU','ENV_KEN','ENV_MAR','ENV_MEX','ENV_MYS','ENV_MLI'
+                        'ENV_TZA','ENV_COL','ENV_DZA','ENV_TUN','ENV_SSD','ENV_ZMB','ENV_MAR','ENV_MEX','ENV_MOZ','ENV_IND','ENV_SEN','ENV_XKX','ENV_PHL','ENV_MYS','ENV_PRY', 
                     ]
                 }
             }

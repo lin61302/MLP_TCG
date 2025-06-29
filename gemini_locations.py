@@ -360,8 +360,10 @@ if __name__ == "__main__":
         parser = GeminiBatchGeoParser(
             uri="mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true",
             db_name="ml4p",
-            countries=['IND','KGZ','KHM','ZAF', 'DZA',
-                        'ENV_KGZ','ENV_MRT','ENV_UZB','ENV_IDN', 'ENV_TUN','ENV_ZAF','ENV_PER','ENV_PRY','ENV_PHL','ENV_RWA','ENV_SEN','ENV_TUR','ENV_XKX','ENV_UKR','ENV_DZA','ENV_ECU','ENV_KEN','ENV_MAR','ENV_MEX','ENV_MYS','ENV_MLI'
+            countries=[
+                # 'IND','KGZ','KHM','ZAF', 'DZA',
+                #         'ENV_KGZ','ENV_MRT','ENV_UZB','ENV_IDN', 'ENV_TUN','ENV_ZAF','ENV_PER','ENV_PRY','ENV_PHL','ENV_RWA','ENV_SEN','ENV_TUR','ENV_XKX','ENV_UKR','ENV_DZA','ENV_ECU','ENV_KEN','ENV_MAR','ENV_MEX','ENV_MYS','ENV_MLI'
+                    'ENV_TZA','ENV_COL','ENV_DZA','ENV_TUN','ENV_SSD','ENV_ZMB','ENV_MAR','ENV_MEX','ENV_MOZ','ENV_IND','ENV_SEN','ENV_XKX','ENV_PHL','ENV_MYS','ENV_PRY', 
                     ] ,
                 
             #done: "ENV_GTM", "ENV_NGA", 'ENV_SLV', 'ENV_PAN', 'ENV_INT', 'ENV_CRI', 'ENV_SLB','ENV_NIC','ENV_BEN','ENV_PAK','ENV_HND' 
