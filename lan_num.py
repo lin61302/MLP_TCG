@@ -62,6 +62,7 @@ countries = [
     # ('Indonisia', 'IDN')
     # ('Congo' , 'COD')
     # ('Kazakhstan','KAZ')
+    ('uzb', 'UZB')
     # ('Burkina Faso', 'BFA')
     # ('Env Int', 'ENV_INT')
     # ('Env Reg', 'ENV_REG')
@@ -96,7 +97,7 @@ countries = [
     # ('env mys','ENV_MYS')
     # ('env idn', 'ENV_IDN')
     # ('env zaf', 'ENV_ZAF')
-    ('env ssd', 'ENV_SSD')
+    # ('env ssd', 'ENV_SSD')
     # ('env ind', 'ENV_IND')
     # ('env moz', 'ENV_MOZ'),
     # ('env tza', 'ENV_TZA')
@@ -119,6 +120,7 @@ for ctup in countries:
     print(loc)
     ints = [doc['source_domain'] for doc in db['sources'].find({'major_international': True, 'include': True})]
     regionals = [doc['source_domain'] for doc in db['sources'].find({'major_regional': True, 'include': True})]
+    loc = ['anhor.uz']
 
 # print(ints)
 
