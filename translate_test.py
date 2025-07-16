@@ -83,7 +83,7 @@ def translate_text(lan, list_text):
     except:
         pass
 
-    max_trial = 2
+    max_trial = 3
     while max_trial>0:
         try:
             translated_text = GoogleTranslator(source=lan, target='en').translate_batch(list_text)
@@ -99,10 +99,12 @@ def translate_text(lan, list_text):
 
     try:
         translated_text = [text.replace('\\', '') for text in translated_text]
+        return translated_text
     except:
-        pass
+        print('max try reached but fails')
+        return ''
 
-    return translated_text
+    
 
 # Use any translator you like, in this example GoogleTranslator
 # output -> Weiter so, du bist großartig
