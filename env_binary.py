@@ -117,8 +117,8 @@ class EventClassifier:
                         # 'ENV_TZA','ENV_COL','ENV_DZA','ENV_TUN','ENV_SSD','ENV_ZMB','ENV_MAR','ENV_MEX','ENV_MOZ','ENV_IND','ENV_SEN','ENV_XKX','ENV_PHL','ENV_MYS','ENV_PRY', 
                         # 'MEX','UZB',
                         # 'ENV_TLS','ENV_DZA','ENV_KGZ','ENV_ZWE','ENV_ECU','ENV_MYS'
-                        'ENV_SSD', 'ENV_NAM', 'ENV_ETH', 'ENV_IND', 'ENV_ZMB', 'ENV_ZAF', 'ENV_XKX', 'ENV_PHL', 'ENV_ZWE', 'ENV_MYS', 'ENV_TLS', 'ENV_TZA' 
-
+                        # 'ENV_SSD', 'ENV_NAM', 'ENV_ETH', 'ENV_IND', 'ENV_ZMB', 'ENV_ZAF', 'ENV_XKX', 'ENV_PHL', 'ENV_ZWE', 'ENV_MYS', 'ENV_TLS', 'ENV_TZA' 
+                        'MEX'
                         ]
                 }
             }
