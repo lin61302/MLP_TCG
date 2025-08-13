@@ -70,12 +70,12 @@ class EventClassifier:
         colname = f'articles-{date.year}-{date.month}'
         print(f"Processing collection: {colname}")
 
-        # source_domains = self.db.sources.distinct(
-        #     'source_domain',
-        #     filter={
-        #         'include': True,
-        #         'primary_location': {
-        #             '$in': [
+        source_domains = self.db.sources.distinct(
+            'source_domain',
+            filter={
+                'include': True,
+                'primary_location': {
+                    '$in': [
                         
         #                     # 'BGD','NGA','UGA','COL'
         #                     # 'ECU',  'PRY','JAM','HND', 'SLV', 'NIC','PER', 'DOM','PAN', 'CRI','SLB', 
@@ -85,15 +85,15 @@ class EventClassifier:
         #                     #    'ZAF', 'TUN', 'IDN', 'AGO', 'ARM', 'LKA', 'MYS', 'CMR', 'HUN', 'MWI', 
         #                     #    'UZB', 'IND', 'MOZ', 'AZE', 'KGZ', 'MDA', 'KAZ', 'DZA', 'MKD', 'SSD', 
         #                     #    'LBR', 'PAK', 'NPL', 'NAM', 'BFA', 'TLS', 
-        #                        'MEX','UZB'
+                               'MEX'
                         
 
-        #                 ]
-        #         }
-        #     }
-        # )
+                        ]
+                }
+            }
+        )
 
-        source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
+        # source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
         # source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
 
         self.cursor = self.db[colname].find(
