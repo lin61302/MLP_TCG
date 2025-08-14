@@ -361,7 +361,7 @@ if __name__ == "__main__":
             uri="mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true",
             db_name="ml4p",
             countries=[
-                'ENV_SSD', 'ENV_NAM', 'ENV_ETH', 'ENV_IND', 'ENV_ZMB', 'ENV_ZAF', 'ENV_XKX', 'ENV_PHL', 'ENV_ZWE', 'ENV_MYS', 'ENV_TLS', 'ENV_TZA' 
+                'MEX' 
                     ] ,
                 
             #done: "ENV_GTM", "ENV_NGA", 'ENV_SLV', 'ENV_PAN', 'ENV_INT', 'ENV_CRI', 'ENV_SLB','ENV_NIC','ENV_BEN','ENV_PAK','ENV_HND' 
