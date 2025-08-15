@@ -96,7 +96,7 @@ class EventClassifier:
                                                                                                                     #    'UZB', 'IND', 'MOZ', 'AZE', 'KGZ', 'MDA', 'KAZ', 'DZA', 'MKD', 'SSD', 
                                                                                                                     #    'LBR', 'PAK', 'NPL', 'NAM', 'BFA', 'TLS', 
                                                                                                                     # 'MEX'
-                                                                                                                    'MEX'
+                                                                                                                    'MEX','UZB'
                                                                                                                    ]}})
         # source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
         # source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
