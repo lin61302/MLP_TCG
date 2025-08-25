@@ -362,7 +362,7 @@ if __name__ == "__main__":
             db_name="ml4p",
             countries=[
                 # 'MEX' 
-                'ENV_MYS', 'UZB'
+                'ENV_TLS','ENV_ARM'
                     ] ,
                 
             #done: "ENV_GTM", "ENV_NGA", 'ENV_SLV', 'ENV_PAN', 'ENV_INT', 'ENV_CRI', 'ENV_SLB','ENV_NIC','ENV_BEN','ENV_PAK','ENV_HND' 
@@ -385,7 +385,7 @@ if __name__ == "__main__":
 
             start_year=2012,
             end_year=2025,
-            end_month=4,
+            end_month=8,
             batch_size=bs
         )
         parser.run()
