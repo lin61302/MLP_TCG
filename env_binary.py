@@ -119,7 +119,7 @@ class EventClassifier:
                         # 'ENV_TLS','ENV_DZA','ENV_KGZ','ENV_ZWE','ENV_ECU','ENV_MYS'
                         # 'ENV_SSD', 'ENV_NAM', 'ENV_ETH', 'ENV_IND', 'ENV_ZMB', 'ENV_ZAF', 'ENV_XKX', 'ENV_PHL', 'ENV_ZWE', 'ENV_MYS', 'ENV_TLS', 'ENV_TZA' 
                         # 'MEX'
-                        'ENV_TLS','ENV_ARM'
+                        'ENV_TLS','ENV_ARM','ENV_NAM'
                         ]
                 }
             }
