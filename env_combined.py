@@ -206,11 +206,11 @@ class EnvPipeline:
                 self.generate_cursor(date)
                 docs = list(self.cursor)
                 if not docs:
-                    print(f'No Articles to Update for {date}')
+                    print(f'({self.model_name})No Articles to Update for {date}')
                     continue
 
                 self.queue = []
-                for doc in tqdm(docs, desc=f"Classifying docs in {date}", leave=False):
+                for doc in tqdm(docs, desc=f"({self.model_name})Classifying docs in {date}", leave=False):
                     self.queue.append(doc)
 
                     # classify in chunks
