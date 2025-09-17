@@ -88,43 +88,6 @@ class EventClassifier:
                 'include': True,
                 'primary_location': {
                     '$in': [
-                        # 'ENV_SLB','ENV_NIC','ENV_NGA','ENV_SLV','ENV_GTM','ENV_PAN','ENV_INT','ENV_REG','ENV_CRI'
-                        # 'CRI','PAK','HND','NIC','SLV','GTM','PAN'
-                        # 'SLB', 'NGA', 'HND','NIC','SLV','GTM',
-                        # 'ENV_GTM',
-                        # 'CMR','TUN','LKA','UGA','NPL','AGO'
-                        # 'PAN','PRY','ECU','JAM'
-                        # 'ENV_BLR','ENV_BFA','ENV_ALB','ENV_AGO','ENV_NGA','ENV_SLV','ENV_BEN','ENV_PAK','ENV_HND'
-                        # 'GEO','TLS','MOZ','MLI','KAZ','ARM'
-                        # 'CRI','PAN'
-                        # 'MAR','SSD','TZA','RWA','ZWE','COD','NER', 
-                        # 'ENV_INT'
-                        # 'ETH','MRT','GHA','ALB', 'BEN', 'PAK',
-                        # 'ARM'
-                        # 'ENV_AGO', 'ENV_AZE', 'ENV_BLR', 'ENV_CMR', 'ENV_BGD', 'ENV_DZA', 'ENV_COL', 'ENV_DOM', 'ENV_UZB', 'ENV_KAZ', 'ENV_KGZ'
-                        # 'IND'
-                        # 'ENV_AGO'
-                        # 'PHL','BFA','AGO','AZE','MWI','BLR','BGD','HUN','XKX','MYS',
-                        # 'MOZ', 'ARM'
-                        # 'ENV_BLR','ENV_BGD', 'ENV_DZA', 'ENV_COL', 'ENV_GHA', 'ENV_GEO', 'ENV_HUN', 'ENV_JAM', 'ENV_SLV'
-                        # 'IDN','PAN','MKD','KGZ','MDA','SEN','SRB','LBR','NAM'
-                        # 'ENV_CMR','ENV_UZB','ENV_KHM','ENV_LBR'
-                        #  'ENV_AZE','ENV_KGZ','ENV_IDN','ENV_MDA','ENV_MKD','ENV_COD','ENV_KAZ','ENV_LKA','ENV_ECU','ENV_GTM'
-                        # 'COL','TUR','PER','UZB'
-                        # 'ENV_CMR','ENV_BGD','ENV_UZB','ENV_HUN','ENV_GEO','ENV_GHA','ENV_JAM','ENV_MWI','ENV_MRT','ENV_NER'
-                        # 'NIC'
-                        # 'ENV_COL','ENV_TUN','ENV_BLR','ENV_PRY','ENV_UGA','ENV_ETH','ENV_IDN','ENV_KHM','ENV_LBR','ENV_COD','ENV_MLI','ENV_NPL'
-                        # 'ENV_ECU'
-                        # 'UKR', 'DOM', 'ZMB', 'KEN',
-                        # 'ENV_BLR'
-                        # 'ENV_DZA','ENV_BLR','ENV_SRB','ENV_TUR','ENV_KEN','ENV_LKA','ENV_MAR','ENV_NAM','ENV_PER','ENV_PHL','ENV_RWA','ENV_UKR'
-                        # 'ENV_KGZ','ENV_MRT','ENV_UZB','ENV_NPL','ENV_ETH','ENV_UGA','ENV_IDN'
-                        # 'IND','KGZ','KHM','ZAF', 'DZA',
-                        # 'ENV_KGZ','ENV_MRT','ENV_UZB','ENV_IDN', 'ENV_TUN','ENV_ZAF','ENV_PER','ENV_PRY','ENV_PHL','ENV_RWA','ENV_SEN','ENV_TUR','ENV_XKX','ENV_UKR','ENV_DZA','ENV_ECU','ENV_KEN','ENV_MAR','ENV_MEX','ENV_MYS','ENV_MLI'
-                        # 'ENV_TZA','ENV_COL','ENV_DZA','ENV_TUN','ENV_SSD','ENV_ZMB','ENV_MAR','ENV_MEX','ENV_MOZ','ENV_IND','ENV_SEN','ENV_XKX','ENV_PHL','ENV_MYS','ENV_PRY', 
-                        # 'MEX','UZB',
-                        # 'ENV_TLS','ENV_DZA','ENV_KGZ','ENV_ZWE','ENV_ECU','ENV_MYS'
-                        # 'ENV_SSD', 'ENV_NAM', 'ENV_ETH', 'ENV_IND', 'ENV_ZMB', 'ENV_ZAF', 'ENV_XKX', 'ENV_PHL', 'ENV_ZWE', 'ENV_MYS', 'ENV_TLS', 'ENV_TZA' 
                          'ENV_TLS','ENV_ARM','ENV_NAM'
                     ]
                 }
