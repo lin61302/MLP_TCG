@@ -76,16 +76,7 @@ class EventClassifier:
                 'include': True,
                 'primary_location': {
                     '$in': [
-                        
-        #                     # 'BGD','NGA','UGA','COL'
-        #                     # 'ECU',  'PRY','JAM','HND', 'SLV', 'NIC','PER', 'DOM','PAN', 'CRI','SLB', 
-        #                     #    'ALB', 'BEN', 'ETH', 'GEO', 'KEN', 'MLI', 'MAR',   
-        #                     #    'SRB', 'SEN', 'TZA', 'UKR', 'ZWE', 'MRT', 'ZMB', 'XKX', 'NER',  
-        #                     #     'PHL', 'GHA', 'RWA', 'GTM', 'BLR', 'KHM', 'COD', 'TUR', 
-        #                     #    'ZAF', 'TUN', 'IDN', 'AGO', 'ARM', 'LKA', 'MYS', 'CMR', 'HUN', 'MWI', 
-        #                     #    'UZB', 'IND', 'MOZ', 'AZE', 'KGZ', 'MDA', 'KAZ', 'DZA', 'MKD', 'SSD', 
-        #                     #    'LBR', 'PAK', 'NPL', 'NAM', 'BFA', 'TLS', 
-                               'UZB'
+                        'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
                         
 
                         ]

@@ -97,7 +97,7 @@ class EnvPipeline:
             'source_domain',
             filter={
                 'include': True,
-                'primary_location': {'$in': ['ENV_TLS','ENV_ARM','ENV_NAM']}
+                'primary_location': {'$in': ['MEX','LBR','MDA','SRB','LKA','KGZ','PHL']}
             }
         )
 
