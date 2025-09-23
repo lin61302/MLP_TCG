@@ -86,7 +86,11 @@ class EventClassifier:
             'source_domain',
             filter={
                 'include': True,
-                'primary_location': {'$in': ['MEX','LBR','MDA','SRB','LKA','KGZ','PHL']}
+                'primary_location': {'$in': [
+                                            # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
+                                            'MLI','ARM','SLV','ZMB','UGA'
+                                             
+                                             ]}
             }
         )
 

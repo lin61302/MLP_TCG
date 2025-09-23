@@ -87,7 +87,8 @@ class EventClassifier:
         # source_domains = ['divergentes.com', 'revistafactum.com', 'alharaca.sv']
         source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : 
                                                                                                                    [
-                                                                                                                    'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
+                                                                                                                    # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
+                                                                                                                    'MLI','ARM','SLV','ZMB','UGA'
                                                                                                                    ]}})
         # source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
         # source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
