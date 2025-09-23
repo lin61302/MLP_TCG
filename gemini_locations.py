@@ -362,7 +362,7 @@ if __name__ == "__main__":
             db_name="ml4p",
             countries=[
                 # 'MEX' 
-                 'ENV_TLS','ENV_ARM','ENV_NAM'
+                 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
                     ] ,
                 
             #done: "ENV_GTM", "ENV_NGA", 'ENV_SLV', 'ENV_PAN', 'ENV_INT', 'ENV_CRI', 'ENV_SLB','ENV_NIC','ENV_BEN','ENV_PAK','ENV_HND' 
