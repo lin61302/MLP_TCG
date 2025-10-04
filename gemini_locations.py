@@ -363,7 +363,8 @@ if __name__ == "__main__":
             countries=[
                 # 'MEX' 
                 #  'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
-                'MLI','ARM','SLV','ZMB','UGA'
+                # 'MLI','ARM','SLV','ZMB','UGA'
+                'MOZ','COD','SSD','ZWE','GHA','KHM'
                     ] ,
                 
             #done: "ENV_GTM", "ENV_NGA", 'ENV_SLV', 'ENV_PAN', 'ENV_INT', 'ENV_CRI', 'ENV_SLB','ENV_NIC','ENV_BEN','ENV_PAK','ENV_HND' 
