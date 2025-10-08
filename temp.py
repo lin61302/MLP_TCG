@@ -12,9 +12,9 @@ import time
 from dotenv import load_dotenv
 from pymongo import MongoClient
 import re
-import bs4
+# import bs4
 from bs4 import BeautifulSoup
-from newspaper import Article
+# from newspaper import Article
 from dateparser.search import search_dates
 import dateparser
 import requests
@@ -23,7 +23,7 @@ from urllib.parse import quote_plus
 import time
 import json
 import multiprocessing
-from newsplease import NewsPlease
+# from newsplease import NewsPlease
 from datetime import datetime
 import pandas as pd
 headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
