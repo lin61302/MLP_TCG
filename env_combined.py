@@ -100,7 +100,8 @@ class EnvPipeline:
                 'primary_location': {'$in': [
                                                 # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
                                                 # 'MLI','ARM','SLV','ZMB','UGA'
-                                                'MOZ','COD','SSD','ZWE','GHA','KHM'
+                                                # 'MOZ','COD','SSD','ZWE','GHA','KHM'
+                                                'BEN', 'UKR', 'GEO', 'GTM','NIC', 'PRY'
                                              
                                              ]}
             }
