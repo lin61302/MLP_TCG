@@ -80,7 +80,8 @@ class EventClassifier:
                         # 'MLI','ARM','SLV','ZMB','UGA'
                         # 'MOZ','COD','SSD','ZWE','GHA','KHM'
                         # 'BEN', 'UKR', 'GEO', 'GTM','NIC', 'PRY'
-                        'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
+                        # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
+                        'DOM','BLR'
                         
 
                         ]
