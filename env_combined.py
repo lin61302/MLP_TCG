@@ -93,21 +93,23 @@ class EnvPipeline:
         colname = f'articles-{date.year}-{date.month}'
         print(f"[COL] {colname}")
 
-        source_domains = self.db.sources.distinct(
-            'source_domain',
-            filter={
-                'include': True,
-                'primary_location': {'$in': [
-                                                # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
-                                                # 'MLI','ARM','SLV','ZMB','UGA'
-                                                # 'MOZ','COD','SSD','ZWE','GHA','KHM'
-                                                # 'BEN', 'UKR', 'GEO', 'GTM','NIC', 'PRY'
-                                                # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
-                                                'DOM','BLR'
+        # source_domains = self.db.sources.distinct(
+        #     'source_domain',
+        #     filter={
+        #         'include': True,
+        #         'primary_location': {'$in': [
+        #                                         # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
+        #                                         # 'MLI','ARM','SLV','ZMB','UGA'
+        #                                         # 'MOZ','COD','SSD','ZWE','GHA','KHM'
+        #                                         # 'BEN', 'UKR', 'GEO', 'GTM','NIC', 'PRY'
+        #                                         # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
+        #                                         'DOM','BLR'
                                              
-                                             ]}
-            }
-        )
+        #                                      ]}
+        #     }
+        # )
+        source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
+        source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
 
         # missing-field check depends on where we write:
         missing_field = self.target_field  # 'environmental_binary' or 'env_classifier'
