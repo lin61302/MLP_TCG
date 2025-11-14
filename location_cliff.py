@@ -507,34 +507,34 @@ if __name__ == '__main__':
     country_list = []
 
     ############
-    # int_reg = True
-    # AGO_ind = False
-    # country_list = ['DOM','BLR']
-    # #'ENV_DZA','ENV_ECU','ENV_KEN','ENV_MAR','ENV_MLI','ENV_MYS','ENV_MEX'
-    # source_domains = db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : country_list}})
+    int_reg = True
+    AGO_ind = False
+    country_list = ['DOM','BLR']
+    #'ENV_DZA','ENV_ECU','ENV_KEN','ENV_MAR','ENV_MLI','ENV_MYS','ENV_MEX'
+    source_domains = db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : country_list}})
     
-    # # source_domains = ['divergentes.com', 'revistafactum.com', 'alharaca.sv']
-    # # source_domains = db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : ['MLI']}, 'primary_language':language})
+    # source_domains = ['divergentes.com', 'revistafactum.com', 'alharaca.sv']
+    # source_domains = db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : ['MLI']}, 'primary_language':language})
 
 
-    # if 'DZA' in country_list:
-    #     source_domains_dza = db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : ['DZA']}})
-    #     location_pipeline(mongo_uri=uri, batch_size=128, sources=source_domains_dza, my_cliff=my_cliff, DZA_or_PAK = True, int_reg = int_reg, AGO_ind = AGO_ind)
-    # if 'PAK' in country_list:
-    #     source_domains_pak = db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : ['PAK']}})
-    #     location_pipeline(mongo_uri=uri, batch_size=128, sources=source_domains_pak, my_cliff=my_cliff, DZA_or_PAK = False, int_reg = int_reg, AGO_ind = AGO_ind)
+    if 'DZA' in country_list:
+        source_domains_dza = db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : ['DZA']}})
+        location_pipeline(mongo_uri=uri, batch_size=128, sources=source_domains_dza, my_cliff=my_cliff, DZA_or_PAK = True, int_reg = int_reg, AGO_ind = AGO_ind)
+    if 'PAK' in country_list:
+        source_domains_pak = db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : ['PAK']}})
+        location_pipeline(mongo_uri=uri, batch_size=128, sources=source_domains_pak, my_cliff=my_cliff, DZA_or_PAK = False, int_reg = int_reg, AGO_ind = AGO_ind)
 
-    # source_domains = db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : country_list}})
-    # location_pipeline(mongo_uri=uri, batch_size=128, sources=source_domains, my_cliff=my_cliff, DZA_or_PAK = False, int_reg = int_reg, AGO_ind = AGO_ind)
+    source_domains = db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : country_list}})
+    location_pipeline(mongo_uri=uri, batch_size=128, sources=source_domains, my_cliff=my_cliff, DZA_or_PAK = False, int_reg = int_reg, AGO_ind = AGO_ind)
 
 
 ########## international or regional
 
-    int_reg = True
-    AGO_ind = True
-    source_domains = db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
-    source_domains += db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
-    location_pipeline(mongo_uri=uri, batch_size=128, sources=source_domains, my_cliff=my_cliff, DZA_or_PAK = False, int_reg = int_reg, AGO_ind = AGO_ind)
+    # int_reg = True
+    # AGO_ind = True
+    # source_domains = db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
+    # source_domains += db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
+    # location_pipeline(mongo_uri=uri, batch_size=128, sources=source_domains, my_cliff=my_cliff, DZA_or_PAK = False, int_reg = int_reg, AGO_ind = AGO_ind)
 
 ###########
     # Git operations
