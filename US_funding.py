@@ -97,8 +97,8 @@ class EventClassifier:
                                              ]}
             }
         )
-        source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
-        source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
+        # source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
+        # source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
 
         base_filter = {
             self.model_name: {'$exists': False},
