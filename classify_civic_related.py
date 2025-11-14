@@ -85,17 +85,17 @@ class EventClassifier:
         print("Colname", colname)
         # source_domains = ['nicaraguainvestiga.com', 'agenciaocote.com', 'prensacomunitaria.org']
         # source_domains = ['divergentes.com', 'revistafactum.com', 'alharaca.sv']
-        # source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : 
-        #                                                                                                            [
-        #                                                                                                             # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
-        #                                                                                                             # 'MLI','ARM','SLV','ZMB','UGA'
-        #                                                                                                             # 'MOZ','COD','SSD','ZWE','GHA','KHM'
-        #                                                                                                             # 'BEN', 'UKR', 'GEO', 'GTM','NIC', 'PRY'
-        #                                                                                                             # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
-        #                                                                                                             'DOM','BLR'
-        #                                                                                                            ]}})
-        source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
-        source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
+        source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : 
+                                                                                                                   [
+                                                                                                                    # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
+                                                                                                                    # 'MLI','ARM','SLV','ZMB','UGA'
+                                                                                                                    # 'MOZ','COD','SSD','ZWE','GHA','KHM'
+                                                                                                                    # 'BEN', 'UKR', 'GEO', 'GTM','NIC', 'PRY'
+                                                                                                                    # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
+                                                                                                                    'UZB','DOM','BLR','AGO','XKX','ALB','MKD','BFA','CMR'
+                                                                                                                   ]}})
+        # source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
+        # source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})
         # # source_domains = self.db.sources.distinct('source_domain', filter={'include' : True})
 
         
