@@ -103,7 +103,8 @@ class EnvPipeline:
                                                 # 'MOZ','COD','SSD','ZWE','GHA','KHM'
                                                 # 'BEN', 'UKR', 'GEO', 'GTM','NIC', 'PRY'
                                                 # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
-                                                'UZB','DOM','BLR','AGO','XKX','ALB','MKD','BFA','CMR'
+                                                # 'UZB','DOM','BLR','AGO','XKX','ALB','MKD','BFA','CMR'
+                                                'IND','IDN','HUN','AZE','CRI','ECU','ETH','BGD','COL','DZA'
         
                                              
                                              ]}
