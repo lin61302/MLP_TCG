@@ -509,7 +509,7 @@ if __name__ == '__main__':
     ############
     int_reg = True
     AGO_ind = False
-    country_list = ['IND','IDN','HUN','AZE','CRI','ECU','ETH','BGD','COL','DZA']
+    country_list = ['IND','IDN','HUN','AZE','CRI','ECU','ETH','BGD','COL','DZA','SRB']
     #'ENV_DZA','ENV_ECU','ENV_KEN','ENV_MAR','ENV_MLI','ENV_MYS','ENV_MEX'
     source_domains = db.sources.distinct('source_domain', filter={'include' : True, 'primary_location' : {'$in' : country_list}})
     

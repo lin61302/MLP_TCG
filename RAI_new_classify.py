@@ -83,7 +83,7 @@ class EventClassifier:
                         # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
                         
                         # 'UZB','DOM','BLR','AGO','XKX','ALB','MKD','BFA','CMR'
-                        'IND','IDN','HUN','AZE','CRI','ECU','ETH','BGD','COL','DZA'
+                        'IND','IDN','HUN','AZE','CRI','ECU','ETH','BGD','COL','DZA','SRB'
                         
 
                         ]
