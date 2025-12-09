@@ -8,12 +8,14 @@ Reconcile gemini_locations + cliff_locations into KB-grounded admin0/admin1/admi
 
 Key design goals:
 - Never assign a country/admin ladder purely from weak single-token matching.
+- Only promote ADMIN1/ADMIN2 when the KB match is plausibly an alias of the *surface* mention (the dict key).
 - Prefer (and preserve) Gemini hints when we cannot refute them.
 - Use CLiFF mostly as ISO context + optional safe “cliff-only” adds (exact KB match only).
 - Avoid generic/global and ultra-ambiguous tokens (“earth”, “europe”, “south”, etc).
 - Revisit is NOT “no locations”; revisit only when we appear to have a real admin-unit mention
   under a KB-grounded country but cannot produce a grounded admin1/admin2 ladder.
 - De-duplicate when multiple surface forms map to the same (level, admin0, admin1, admin2) ladder.
+- NEW: persist match evidence (which surface/token triggered the match) for debugging/aggregation.
 """
 
 import os
@@ -39,6 +41,10 @@ RECONCILED_META_FIELD = "reconciled_locations_meta"
 RECONCILED_DEBUG_FIELD = "reconciled_locations_debug"
 RECONCILED_REVISIT_FIELD = "reconciled_locations_revisit"
 
+# NEW: easier aggregation/debugging
+RECONCILED_EVIDENCE_FIELD = "reconciled_locations_evidence"
+RECONCILED_MATCH_TERMS_FIELD = "reconciled_locations_match_terms"
+
 
 # =============================================================================
 # String normalization + parsing
@@ -46,6 +52,7 @@ RECONCILED_REVISIT_FIELD = "reconciled_locations_revisit"
 UNKNOWN_SENTINELS = {
     "", "unknown", "unk", "none", "null", "nan", "n/a", "na",
     "not sure", "unspecified", "not specified",
+    "other",
     # Gemini placeholders
     "country", "country or unknown", "unknown or country",
     "country or unk", "unknown or admin0",
@@ -116,6 +123,7 @@ TOKEN_STOPWORDS = {
     "province", "district", "region", "oblast", "state", "county",
     "municipality", "department", "prefecture", "commune", "governorate",
     "republic", "kingdom", "emirate", "federation",
+    "city", "town", "village", "villa",
     # geographic features
     "river", "lake", "mount", "mountain", "valley", "bay", "gulf",
     "ocean", "sea", "strait", "channel", "island", "islands",
@@ -143,6 +151,7 @@ MULTI_TOKEN_QUALIFIERS = {
     "parish",
     "city", "capital", "metropolitan", "special", "federal",
     "territory", "republic", "autonomous", "of", "the",
+    "saint", "st",  # common prefixes that shouldn't block "Petersburg" -> "Saint Petersburg"
 }
 
 # Known exonyms / common transliterations / typos seen in logs
@@ -240,7 +249,7 @@ def looks_like_poi(loc_name: str) -> bool:
 
 def looks_like_admin_unit(loc_name: str) -> bool:
     n = normalize_for_match(loc_name)
-    admin_terms = {"province", "oblast", "region", "district", "state", "department", "governorate", "prefecture", "county", "commune"}
+    admin_terms = {"province", "oblast", "region", "district", "state", "department", "governorate", "prefecture", "county", "commune", "municipality"}
     return any(t in n for t in admin_terms)
 
 
@@ -388,7 +397,12 @@ class KBIndex:
     def is_admin0_name(self, name: str) -> bool:
         return normalize_for_match(name) in self.norm_to_values["Admin0"]
 
-    def resolve_admin0(self, text: str, allowed_isos: Optional[Set[str]] = None, min_score: int = 90) -> Tuple[Optional[str], float, str]:
+    def resolve_admin0(
+        self,
+        text: str,
+        allowed_isos: Optional[Set[str]] = None,
+        min_score: int = 88,
+    ) -> Tuple[Optional[str], float, str]:
         """
         Resolve a raw country string (or ISO3) to a KB Admin0 value.
 
@@ -437,7 +451,7 @@ class KBIndex:
         cols = cols or ["Admin1", "Admin2"]
         return sum(self.token_value_count.get(c, {}).get(token, 0) for c in cols)
 
-    def token_hits(self, name: str, cols=None, max_values: int = 12) -> List[Tuple[str, str]]:
+    def token_hits(self, name: str, cols=None, max_values: int = 18) -> List[Tuple[str, str]]:
         """
         Single-token token hits across selected cols.
 
@@ -556,7 +570,6 @@ def admin0_isos(admin0: str, kb_index: KBIndex) -> Set[str]:
     norm = normalize_for_match(admin0)
     # fast path: exact normalized Admin0 hit
     if norm in kb_index.norm_to_values["Admin0"]:
-        # any value in this group shares iso set; pull from dataframe for that canonical value
         canonical = sorted(kb_index.norm_to_values["Admin0"][norm])[0]
         rows = kb_index.kb[kb_index.kb["Admin0"].apply(lambda x: normalize_for_match(x) == normalize_for_match(canonical))]
         return set(rows["Admin0_ISO3"].dropna().astype(str).str.upper().unique().tolist())
@@ -683,7 +696,11 @@ def prepare_candidate_info(
 
     resolved_a0, a0_score, a0_method = (None, 0.0, "none")
     if a0_raw != "Unknown":
-        resolved_a0, a0_score, a0_method = kb_index.resolve_admin0(a0_raw, allowed_isos=None, min_score=90)
+        allowed = None
+        # if context is tight, allow it to guide admin0 resolution
+        if doc_context_isos and len(doc_context_isos) <= 4:
+            allowed = doc_context_isos
+        resolved_a0, a0_score, a0_method = kb_index.resolve_admin0(a0_raw, allowed_isos=allowed, min_score=88)
 
     candidate = orig.copy()
     if resolved_a0:
@@ -744,67 +761,113 @@ def clean_admin_phrase(text: str) -> str:
     return " ".join(toks).strip()
 
 
-def build_query_variants(loc_name: str, info: dict, kb_index: KBIndex) -> List[str]:
+def looks_like_alias(surface: str, candidate: str) -> bool:
+    """
+    True only when candidate is plausibly the same place as surface (typo/qualifier),
+    not a parent admin unit (e.g., Kazarman vs Jalal-Abad province -> False).
+    """
+    s0 = normalize_for_match(surface)
+    c0 = normalize_for_match(candidate)
+    if not s0 or not c0:
+        return False
+
+    # strip admin qualifiers for alias checks
+    s = clean_admin_phrase(s0)
+    c = clean_admin_phrase(c0)
+
+    if not s or not c:
+        return False
+    if s == c:
+        return True
+
+    # substring with a moderate length gap (allow "saint"/"province"/etc)
+    if (s in c or c in s) and min(len(s), len(c)) >= 4 and abs(len(s) - len(c)) <= 18:
+        return True
+
+    # otherwise require very high similarity
+    return fuzz.WRatio(s, c) >= 92
+
+
+def content_tokens(text: str) -> Set[str]:
+    """
+    Content tokens for overlap checks (drop stopwords + very short tokens).
+    """
+    n = normalize_for_match(text)
+    toks = [t for t in n.split() if t and t not in TOKEN_STOPWORDS and t not in {"of", "the"} and len(t) >= 4]
+    return set(toks)
+
+
+def has_nontrivial_token_overlap(a: str, b: str) -> bool:
+    """
+    Prevent matches driven only by generic admin words ("region", "province", ...):
+    require overlap on at least one content token (len>=4) between query and candidate.
+    """
+    return len(content_tokens(a) & content_tokens(b)) > 0
+
+
+@dataclass(frozen=True)
+class QueryVariant:
+    text: str
+    kind: str  # surface | cleaned | alias_admin2 | alias_admin1 | token
+    source: str  # loc_name | admin2 | admin1 | derived
+
+
+def build_query_variants(loc_name: str, info: dict, kb_index: KBIndex) -> List[QueryVariant]:
     """
     Candidate query variants to avoid matching on generic tokens like 'republic'/'gulf'.
     Ordering is "best effort" priority list:
       1) loc_name (exonym-applied)
       2) cleaned loc_name (qualifiers removed)
-      3) Gemini admin2/admin1 (exonym + cleaned)
+      3) Gemini admin2/admin1 ONLY if they look like aliases of the surface form
       4) salient tokens from (1)-(3), sorted by rarity in KB
     """
-    bases: List[str] = []
+    bases: List[QueryVariant] = []
+    bases.append(QueryVariant(loc_name, "surface", "loc_name"))
 
-    # 1) Always include the surface form itself
-    bases.append(loc_name)
-
-    # 2) Add Gemini admin fields as alternative surface forms (if present)
+    # Add Gemini admin fields ONLY if they look like aliases of the surface form.
     for k in ("admin2", "admin1"):
         v = info.get(k, "Unknown")
-        if v not in {"Unknown", "", None}:
-            bases.append(v)
+        if v not in {"Unknown", "", None} and looks_like_alias(loc_name, v):
+            bases.append(QueryVariant(v, f"alias_{k}", k))
 
     # De-dup bases (normalized)
     base_norm_seen = set()
-    bases2 = []
+    bases2: List[QueryVariant] = []
     for b in bases:
-        b2 = str(b).strip()
-        if not b2:
-            continue
-        bn = normalize_for_match(b2)
+        bn = normalize_for_match(b.text)
         if not bn or bn == "unknown":
             continue
         if bn in base_norm_seen:
             continue
         base_norm_seen.add(bn)
-        bases2.append(b2)
+        bases2.append(b)
 
-    variants: List[str] = []
+    variants: List[QueryVariant] = []
     seen = set()
 
-    def _add(x: str):
-        x = str(x).strip()
-        if not x:
+    def _add(text: str, kind: str, source: str):
+        text = str(text).strip()
+        if not text:
             return
-        xn = normalize_for_match(x)
+        xn = normalize_for_match(text)
         if not xn or xn == "unknown":
             return
         if xn in seen:
             return
         seen.add(xn)
-        variants.append(x)
+        variants.append(QueryVariant(text, kind, source))
 
     # Priority: exonym + cleaned forms first
     for b in bases2:
-        _add(apply_exonym(b))
-        cleaned = clean_admin_phrase(b)
-        if cleaned and cleaned != normalize_for_match(b):
-            _add(cleaned)
+        _add(apply_exonym(b.text), b.kind, b.source)
+        cleaned = clean_admin_phrase(b.text)
+        if cleaned and cleaned != normalize_for_match(b.text):
+            _add(cleaned, "cleaned", b.source)
 
     # Salient tokens (rarity-based)
     tokens: List[str] = []
-    for b in variants[:]:
-        tokens.extend(extract_salient_tokens(b, kb_index, max_tokens=3))
+    for v in variants:
+        tokens.extend(extract_salient_tokens(v.text, kb_index, max_tokens=3))
 
     # De-dup tokens and sort by rarity
     tok_seen = set()
@@ -816,7 +879,7 @@ def build_query_variants(loc_name: str, info: dict, kb_index: KBIndex) -> List[s
     tok_uniq.sort(key=lambda t: (kb_index.token_frequency(t, cols=["Admin1", "Admin2"]), -len(t), t))
 
     for t in tok_uniq:
-        _add(t)
+        _add(t, "token", "derived")
 
     return variants
 
@@ -831,6 +894,11 @@ def is_bad_fuzzy_target(value: str, query: str) -> bool:
     vn = normalize_for_match(value)
     if not vn:
         return True
+
+    # reject very short targets unless exact
+    if len(vn) <= 3 and normalize_for_match(query) != vn:
+        return True
+
     vtoks = vn.split()
     if len(vtoks) == 1 and vtoks[0] in TOKEN_STOPWORDS:
         # allow only if query is exactly that token (rare)
@@ -904,6 +972,9 @@ def reconcile_location(
 
     Output behavior:
     - If we find a KB-grounded Admin1/Admin2, we output canonical ladder + level.
+    - Promotion safety:
+        * We ONLY promote when the KB match looks like an alias of the surface mention (loc_name).
+        * We do NOT promote based solely on Gemini's admin1/admin2 fields if they don't resemble loc_name.
     - If we cannot ground, we keep Gemini fields (possibly admin0 resolved) and do NOT
       promote to ADMIN1/ADMIN2 merely because admin1/admin2 fields were filled.
     """
@@ -916,11 +987,11 @@ def reconcile_location(
     # 0) hard skips
     if is_generic_location_name(loc_name):
         updated = {"location_level": "UNKNOWN", "admin0": "Unknown", "admin1": "Unknown", "admin2": "Unknown"}
-        return updated, "Generic/global term (skipped)", {"method": "generic_skip"}
+        return updated, "Generic/global term (skipped)", {"method": "generic_skip", "match": None}
 
     if is_pure_directional(loc_name):
         updated = {"location_level": "UNKNOWN", "admin0": "Unknown", "admin1": "Unknown", "admin2": "Unknown"}
-        return updated, "Directional-only term (skipped)", {"method": "direction_skip"}
+        return updated, "Directional-only term (skipped)", {"method": "direction_skip", "match": None}
 
     # 1) If it looks like a country mention (and resolvable), resolve admin0
     locally_country_like = (raw_level_norm in {"country", "nation", "admin0", "level0", "national"}) or kb_index.is_admin0_name(loc_name)
@@ -939,7 +1010,7 @@ def reconcile_location(
 
         if not chosen:
             raw = info["admin0"] if info["admin0"] != "Unknown" else loc_name
-            chosen, score, m = kb_index.resolve_admin0(raw, allowed_isos=None, min_score=90)
+            chosen, score, m = kb_index.resolve_admin0(raw, allowed_isos=None, min_score=88)
             if chosen:
                 method_detail = f"{m}:{score:.1f}"
             else:
@@ -953,10 +1024,10 @@ def reconcile_location(
                 "admin1": "Unknown",
                 "admin2": "Unknown",
             }
-            return updated, f"Country unresolved in KB ({method_detail})", {"method": "country_unresolved", "detail": method_detail}
+            return updated, f"Country unresolved in KB ({method_detail})", {"method": "country_unresolved", "detail": method_detail, "match": {"evidence_term": loc_name, "kind": "surface", "matched_level": "ADMIN0", "matched_value": updated["admin0"], "score": None}}
 
         updated = {"location_level": "ADMIN0", "admin0": chosen, "admin1": "Unknown", "admin2": "Unknown"}
-        return updated, f"Country resolved via {method_detail}", {"method": "country_resolve", "detail": method_detail}
+        return updated, f"Country resolved via {method_detail}", {"method": "country_resolve", "detail": method_detail, "match": {"evidence_term": loc_name, "kind": "surface", "matched_level": "ADMIN0", "matched_value": chosen, "score": None}}
 
     # 2) ISO constraints for this location
     iso_set, iso_source, iso_mode = derive_iso_constraints(loc_name, info, cliff_context, kb_index, doc_context_isos)
@@ -988,7 +1059,7 @@ def reconcile_location(
         updated["admin1"] = "Unknown"
         updated["admin2"] = "Unknown"
         note = "Feature/geography phrase (skipped admin matching)"
-        return updated, note, {"method": "feature_skip", **dbg}
+        return updated, note, {"method": "feature_skip", **dbg, "match": None}
 
     # 4) Canonicalize Gemini admin1/admin2 hints (do NOT wipe if it fails)
     canon_changes = []
@@ -1009,58 +1080,93 @@ def reconcile_location(
     # Strong admin0 (grounded) should never be overridden by a mismatch
     strong_a0 = info.get("admin0") not in {"Unknown", "", None} and bool(admin0_isos(info["admin0"], kb_index))
 
-    # 5) Build query variants (priority list) to avoid matching on generic tokens like 'republic'
+    # 5) Build query variants from the SURFACE mention (plus safe aliases + tokens).
     query_variants = build_query_variants(loc_name, info, kb_index)
-    dbg["query_variants"] = query_variants[:8]  # keep small in debug
-
-    # If we have no ISO context at all, be extra strict
-    effective_threshold = float(threshold)
-    if not iso_set and not strong_a0:
-        effective_threshold = max(effective_threshold, 95.0)
-
-    # Token shortcut: only within strong ISO context
-    has_strong_iso = bool(iso_set) and (iso_source in {"gemini_admin0", "cliff_name"} or (iso_source == "doc_context" and len(iso_set) <= 2))
+    dbg["query_variants"] = [f"{v.kind}:{v.text}" for v in query_variants[:10]]
 
     # If Gemini explicitly said "Other", don't use level hinting; only accept matches with real evidence.
     gemini_hint_level = info.get("location_level", "UNKNOWN")
     if raw_level_norm == "other":
         gemini_hint_level = "UNKNOWN"
 
-    best_found = None  # (score, match_level, best_match, row_dict, used_query)
+    # Token shortcut: only within strong ISO context (or very rare tokens with no ISO)
+    has_strong_iso = bool(iso_set) and (iso_source in {"gemini_admin0", "cliff_name"} or (iso_source == "doc_context" and len(iso_set) <= 2))
+
+    best_found = None  # (score, match_level, best_match, row_dict, QueryVariant)
 
     # 6) Try variants
-    for q in query_variants:
+    for v in query_variants:
+        q = v.text
+        qn = normalize_for_match(q)
+        if not qn or qn == "unknown":
+            continue
         if is_pure_directional(q):
             continue
-        if not q or normalize_for_match(q) == "unknown":
-            continue
 
-        # Token shortcut first (single-token; low ambiguity)
-        if has_strong_iso:
-            direct_hits = kb_index.token_hits(q, cols=["Admin1", "Admin2"])
-            if len(direct_hits) == 1:
-                v, lvl = direct_hits[0]
-                cand = kb_index.rows_for_value(
-                    lvl,
-                    v,
-                    allowed_isos=iso_set,
-                    prefer_admin0=info.get("admin0") if strong_a0 else None,
-                    prefer_admin1=info.get("admin1") if info.get("admin1") not in {"Unknown", "", None} else None,
-                    iso_filter_mode=iso_mode,
-                )
-                if len(cand) == 1:
-                    row = cand.iloc[0].to_dict()
-                    if strong_a0 and normalize_for_match(row["Admin0"]) != normalize_for_match(info["admin0"]):
-                        pass
-                    else:
+        is_token_variant = (v.kind == "token" and len(qn.split()) == 1)
+
+        # Dynamic threshold: keep aggressive matching, but tighten when no country context.
+        base_thresh = float(threshold)
+        if not iso_set and not strong_a0:
+            base_thresh = max(base_thresh, 88.0)
+            if is_token_variant:
+                freq = kb_index.token_frequency(qn, cols=["Admin1", "Admin2"])
+                if freq > 25:
+                    base_thresh = max(base_thresh, 95.0)
+                elif freq > 12:
+                    base_thresh = max(base_thresh, 92.0)
+
+        # A) Token shortcut (single token; low ambiguity by KB frequency)
+        if is_token_variant:
+            # allow without ISO only for very rare tokens
+            allow_token_without_iso = kb_index.token_frequency(qn, cols=["Admin1", "Admin2"]) <= 3
+            if has_strong_iso or allow_token_without_iso:
+                direct_hits = kb_index.token_hits(q, cols=["Admin1", "Admin2"])
+                # If multiple hits, we still can resolve safely using ISO + alias gating
+                if direct_hits:
+                    scored_candidates = []
+                    for val, lvl in direct_hits:
+                        cand = kb_index.rows_for_value(
+                            lvl,
+                            val,
+                            allowed_isos=iso_set if iso_set else None,
+                            prefer_admin0=info.get("admin0") if strong_a0 else None,
+                            prefer_admin1=info.get("admin1") if info.get("admin1") not in {"Unknown", "", None} else None,
+                            iso_filter_mode=iso_mode if iso_set else "soft",
+                        )
+                        if len(cand) == 0:
+                            continue
+                        row = cand.iloc[0].to_dict()
+                        # Promotion safety: match must look like alias of surface mention
+                        if not looks_like_alias(loc_name, val):
+                            continue
+                        # Also require some content token overlap unless very high similarity
+                        if not has_nontrivial_token_overlap(loc_name, val) and fuzz.WRatio(qn, normalize_for_match(val)) < 95:
+                            continue
+                        # Prefer Admin2 if Gemini hinted Admin2; otherwise keep score by similarity
+                        sim = fuzz.WRatio(clean_admin_phrase(loc_name), clean_admin_phrase(val))
+                        tie = 0
+                        if gemini_hint_level == "ADMIN2" and lvl == "Admin2":
+                            tie = 1
+                        scored_candidates.append((tie, sim, lvl, val, row))
+                    if scored_candidates:
+                        scored_candidates.sort(reverse=True)  # highest tie then sim
+                        _, sim, lvl, val, row = scored_candidates[0]
                         updated = info.copy()
-                        updated["admin0"] = row["Admin0"] or updated["admin0"]
-                        updated["admin1"] = row["Admin1"] or updated["admin1"]
-                        updated["admin2"] = row["Admin2"] or updated["admin2"]
-                        updated["location_level"] = lvl.upper()
-                        return updated, f"Token match {lvl} → KB (100)", {"method": "token", "hit": (v, lvl), "query": q, **dbg}
+                        updated["admin0"] = row.get("Admin0") or updated.get("admin0", "Unknown")
+                        if lvl == "Admin1":
+                            updated["admin1"] = val
+                            updated["admin2"] = "Unknown"
+                            updated["location_level"] = "ADMIN1"
+                        else:
+                            updated["admin2"] = val
+                            updated["admin1"] = row.get("Admin1") or updated.get("admin1", "Unknown")
+                            updated["location_level"] = "ADMIN2"
+                        note = f"Token match '{q}' → {lvl} '{val}' (sim={sim:.1f})"
+                        match = {"evidence_term": q, "kind": v.kind, "matched_level": updated["location_level"], "matched_value": val, "score": 100.0, "iso_source": iso_source, "iso_set": sorted(iso_set) if iso_set else []}
+                        return updated, note, {"method": "token", "hit": (val, lvl), "query": q, "match": match, **dbg}
 
-        # Fuzzy match (Admin1/Admin2 only)
+        # B) Fuzzy match (Admin1/Admin2 only)
         attempt_iso = iso_set if iso_set else None
         iso_mode_eff = iso_mode if iso_set else "soft"
 
@@ -1096,17 +1202,23 @@ def reconcile_location(
         if not single_token_multi_token_allowed(q, best_match):
             continue
 
-        # Guard3: avoid matching long phrases to a single generic token by overlap
-        qn = normalize_for_match(q)
+        # Guard3: require some content overlap between query and candidate (unless extremely high similarity)
+        if not has_nontrivial_token_overlap(q, best_match) and fuzz.WRatio(qn, normalize_for_match(best_match)) < 95:
+            continue
+
+        # Guard4: Promotion safety — KB match must look like an alias of the SURFACE mention
+        if not looks_like_alias(loc_name, best_match):
+            continue
+
+        # Guard5: avoid matching long phrases to a single generic token by overlap
         mn = normalize_for_match(best_match)
         if len(qn.split()) > 1 and len(mn.split()) == 1:
-            # if query contains the match token but also other tokens, require strong direct similarity
             if mn in qn.split():
                 direct = fuzz.ratio(qn, mn)
                 if direct < 85 and best_score < 97:
                     continue
 
-        if best_score < effective_threshold:
+        if best_score < base_thresh:
             continue
 
         cand_rows = kb_index.rows_for_value(
@@ -1125,8 +1237,8 @@ def reconcile_location(
         if strong_a0 and normalize_for_match(row["Admin0"]) != normalize_for_match(info["admin0"]):
             continue
 
-        # Store best found (keep highest score; tie-break: prefer Admin2)
-        candidate_tuple = (best_score, match_level, best_match, row, q)
+        # Store best found (keep highest score; tie-break: prefer Admin2 if hinted)
+        candidate_tuple = (best_score, match_level, best_match, row, v)
         if best_found is None:
             best_found = candidate_tuple
         else:
@@ -1134,24 +1246,26 @@ def reconcile_location(
             if best_score > prev_score + 0.1:
                 best_found = candidate_tuple
             elif abs(best_score - prev_score) <= 0.1:
-                # tie-break: prefer Admin2 if Gemini hinted Admin2, else keep existing
                 if gemini_hint_level == "ADMIN2" and match_level == "Admin2" and prev_level != "Admin2":
                     best_found = candidate_tuple
 
     if best_found:
-        best_score, match_level, best_match, row, used_query = best_found
+        best_score, match_level, best_match, row, used_variant = best_found
         updated = info.copy()
         updated["admin0"] = row.get("Admin0") or updated.get("admin0", "Unknown")
         if match_level == "Admin1":
             updated["admin1"] = best_match
             updated["admin2"] = "Unknown"
             updated["location_level"] = "ADMIN1"
-            return updated, f"Matched '{used_query}' → Admin1 '{best_match}' (score={best_score:.1f})", {"method": "fuzzy_admin1", "score": best_score, "query": used_query, **dbg}
+            note = f"Matched '{used_variant.text}' → Admin1 '{best_match}' (score={best_score:.1f})"
         else:
             updated["admin2"] = best_match
             updated["admin1"] = row.get("Admin1") or updated.get("admin1", "Unknown")
             updated["location_level"] = "ADMIN2"
-            return updated, f"Matched '{used_query}' → Admin2 '{best_match}' (score={best_score:.1f})", {"method": "fuzzy_admin2", "score": best_score, "query": used_query, **dbg}
+            note = f"Matched '{used_variant.text}' → Admin2 '{best_match}' (score={best_score:.1f})"
+
+        match = {"evidence_term": used_variant.text, "kind": used_variant.kind, "matched_level": updated["location_level"], "matched_value": best_match, "score": float(best_score), "iso_source": iso_source, "iso_set": sorted(iso_set) if iso_set else []}
+        return updated, note, {"method": f"fuzzy_{match_level.lower()}", "score": best_score, "query": used_variant.text, "match": match, **dbg}
 
     # 7) If none matched: KEEP Gemini info (do not erase), and do not auto-promote level.
     updated = info.copy()
@@ -1159,7 +1273,7 @@ def reconcile_location(
     if updated["location_level"] not in {"ADMIN0", "ADMIN1", "ADMIN2"}:
         updated["location_level"] = "UNKNOWN"
     note = "No reliable KB match"
-    return updated, note, {"method": "no_match_keep_gemini", **dbg}
+    return updated, note, {"method": "no_match_keep_gemini", "match": None, **dbg}
 
 
 # =============================================================================
@@ -1286,7 +1400,7 @@ def add_cliff_only_locations(
                 continue
 
             # First: treat as country mention if resolvable within ISO
-            resolved_a0, score, method = kb_index.resolve_admin0(name, allowed_isos={iso3}, min_score=92)
+            resolved_a0, score, method = kb_index.resolve_admin0(name, allowed_isos={iso3}, min_score=90)
             if resolved_a0:
                 reconciled[name] = {"location_level": "ADMIN0", "admin0": resolved_a0, "admin1": "Unknown", "admin2": "Unknown"}
                 debug_map[name] = {"note": f"Added from CLiFF ({iso3}) as country via {method}:{score:.1f}", "method": "cliff_only_country", "iso": iso3}
@@ -1332,7 +1446,7 @@ def build_doc_context_isos(gemini_dict: dict, cliff_dict: dict, kb_index: KBInde
             if raw == "Unknown" and (raw_level_norm in {"country", "nation", "admin0", "level0", "national"} or kb_index.is_admin0_name(loc_name)):
                 raw = loc_name
             if raw != "Unknown":
-                resolved, _, _ = kb_index.resolve_admin0(raw, allowed_isos=None, min_score=90)
+                resolved, _, _ = kb_index.resolve_admin0(raw, allowed_isos=None, min_score=88)
                 if resolved:
                     doc_isos |= admin0_isos(resolved, kb_index)
     return doc_isos
@@ -1405,13 +1519,11 @@ def deduplicate_reconciled(
     for s, names in groups.items():
         if len(names) <= 1:
             continue
-        # choose best name
         candidates = sorted(names, key=lambda nm: key_quality(nm, reconciled[nm]))
         keep = candidates[0]
         for nm in candidates[1:]:
             out.pop(nm, None)
             dropped += 1
-            # annotate debug (keep record)
             if keep in out_debug:
                 out_debug[keep].setdefault("dedup_dropped", []).append(nm)
             out_debug.pop(nm, None)
@@ -1426,7 +1538,7 @@ def reconcile_doc(
     threshold: int = 85,
     debug: bool = False,
     include_cliff_only: bool = True,
-) -> Tuple[dict, dict, list, dict]:
+) -> Tuple[dict, dict, list, dict, dict, list]:
     """
     Reconcile a document's locations.
 
@@ -1435,6 +1547,8 @@ def reconcile_doc(
       debug_map:  per-name debug
       revisit:    locations needing manual review
       meta:       summary stats
+      evidence:   per-name match evidence (compact)
+      match_terms: sorted unique list of evidence terms used for matches
     """
     gemini_dict = gemini_dict or {}
     if gemini_dict is None or (not isinstance(gemini_dict, dict)):
@@ -1450,6 +1564,9 @@ def reconcile_doc(
     debug_map: Dict[str, dict] = {}
     revisit: List[dict] = []
 
+    evidence_map: Dict[str, dict] = {}
+    match_terms: Set[str] = set()
+
     # Process Gemini items first
     for loc_name, loc_info in gemini_dict.items():
         if not loc_name or normalize_for_match(loc_name) == "unknown":
@@ -1457,7 +1574,8 @@ def reconcile_doc(
 
         # Keep generics out (but retain in debug to understand)
         if is_generic_location_name(loc_name) or is_pure_directional(loc_name):
-            debug_map[loc_name] = {"note": "Generic/directional term skipped", "method": "generic_skip", "original": loc_info}
+            debug_map[loc_name] = {"note": "Generic/directional term skipped", "method": "generic_skip", "original": loc_info, "match": None}
+            evidence_map[loc_name] = {}
             continue
 
         candidate, prep_dbg = prepare_candidate_info(loc_name, loc_info, cliff_dict, kb_index, doc_context_isos)
@@ -1481,6 +1599,13 @@ def reconcile_doc(
             **prep_dbg,
             **dbg,
         }
+
+        m = dbg.get("match") if isinstance(dbg, dict) else None
+        if isinstance(m, dict) and m.get("evidence_term"):
+            evidence_map[loc_name] = m
+            match_terms.add(str(m["evidence_term"]))
+        else:
+            evidence_map[loc_name] = {}
 
         ok, reason = validate_reconciled(updated, loc_name, loc_info, kb_index, cliff_dict, doc_context_isos)
         if not ok:
@@ -1512,7 +1637,7 @@ def reconcile_doc(
         "doc_context_isos": sorted(doc_context_isos) if doc_context_isos else [],
         "timestamp_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }
-    return reconciled_dedup, debug_dedup, revisit, meta
+    return reconciled_dedup, debug_dedup, revisit, meta, evidence_map, sorted(match_terms)
 
 
 # =============================================================================
@@ -1613,7 +1738,7 @@ class ReconcileRunner:
 
                     verbose = processed <= self.debug_rows_per_collection
 
-                    reconciled, debug_map, revisit, meta = reconcile_doc(
+                    reconciled, debug_map, revisit, meta, evidence, match_terms = reconcile_doc(
                         gemini_dict=gem,
                         cliff_dict=cliff,
                         kb_index=self.kb_index,
@@ -1645,6 +1770,8 @@ class ReconcileRunner:
                         RECONCILED_META_FIELD: meta,
                         RECONCILED_DEBUG_FIELD: debug_map,
                         RECONCILED_REVISIT_FIELD: revisit,
+                        RECONCILED_EVIDENCE_FIELD: evidence,
+                        RECONCILED_MATCH_TERMS_FIELD: match_terms,
                     }
 
                     if not self.dry_run:
@@ -1654,10 +1781,10 @@ class ReconcileRunner:
 
 
 if __name__ == "__main__":
-    MONGO_URI = os.environ.get(
-        "MONGO_URI",
-        "mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true",
-    )
+    # For security, set MONGO_URI via environment variable.
+    MONGO_URI = os.environ.get("MONGO_URI", "mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true")
+    if not MONGO_URI:
+        raise RuntimeError("Please set MONGO_URI in your environment (do not hardcode credentials).")
     DB_NAME = os.environ.get("MONGO_DB", "ml4p")
 
     runner = ReconcileRunner(
