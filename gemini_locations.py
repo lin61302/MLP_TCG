@@ -367,7 +367,11 @@ if __name__ == "__main__":
                 # 'MOZ','COD','SSD','ZWE','GHA','KHM'
                 # 'BEN', 'UKR', 'GEO', 'GTM','NIC', 'PRY'
                 # 'UZB','DOM','BLR','AGO','XKX','ALB','MKD','BFA','CMR'
-                'ETH'
+                'ALB', 'BEN', 'COL', 'ECU', 'ETH', 'GEO', 'KEN', 'PRY', 'MLI', 'MAR', 'NGA', 'SRB', 'SEN', 'TZA', 'UGA',
+            'UKR', 'ZWE', 'MRT', 'ZMB', 'XKX', 'NER', 'JAM', 'HND', 'PHL', 'GHA', 'RWA', 'GTM', 'BLR', 'KHM', 'COD',
+            'TUR', 'BGD', 'SLV', 'ZAF', 'TUN', 'IDN', 'NIC', 'AGO', 'ARM', 'LKA', 'MYS', 'CMR', 'HUN', 'MWI', 'UZB',
+            'IND', 'MOZ', 'AZE', 'KGZ', 'MDA', 'KAZ', 'PER', 'DZA', 'MKD', 'SSD', 'LBR', 'PAK', 'NPL', 'NAM', 'BFA',
+            'DOM', 'TLS', 'SLB', 'CRI', 'PAN'
                     ] ,
                 
             #done: "ENV_GTM", "ENV_NGA", 'ENV_SLV', 'ENV_PAN', 'ENV_INT', 'ENV_CRI', 'ENV_SLB','ENV_NIC','ENV_BEN','ENV_PAK','ENV_HND' 
