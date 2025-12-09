@@ -390,7 +390,7 @@ if __name__ == "__main__":
 
             start_year=2012,
             end_year=2025,
-            end_month=8,
+            end_month=12,
             batch_size=bs
         )
         parser.run()
