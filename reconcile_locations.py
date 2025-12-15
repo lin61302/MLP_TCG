@@ -1702,6 +1702,9 @@ class ReconcileRunner:
                 if year == self.end_year and month > self.end_month:
                     break
 
+                if year == 2012 and month < 8:
+                    continue
+
                 collection_name = f"articles-{year}-{month}"
                 collection = self.db[collection_name]
 

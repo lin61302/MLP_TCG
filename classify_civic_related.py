@@ -93,7 +93,7 @@ class EventClassifier:
                                                                                                                     # 'BEN', 'UKR', 'GEO', 'GTM','NIC', 'PRY'
                                                                                                                     # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
                                                                                                                     # 'UZB','DOM','BLR','AGO','XKX','ALB','MKD','BFA','CMR'
-                                                                                                                    'ETH'
+                                                                                                                    'KAZ','MWI','MRT','JAM','NAM','NGA','MYS'
                                                                                                                    ]}})
         # source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
         # source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})

@@ -93,7 +93,8 @@ class EventClassifier:
                                             # 'BEN', 'UKR', 'GEO', 'GTM','NIC', 'PRY'
                                             # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
                                             # 'UZB','DOM','BLR','AGO','XKX','ALB','MKD','BFA','CMR'
-                                            'ETH'
+                                            # 'ETH'
+                                            'KAZ','MWI','MRT','JAM','NAM','NGA','MYS'
                                              
                                              ]}
             }
