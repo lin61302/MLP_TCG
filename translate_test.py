@@ -308,11 +308,11 @@ def main():
     db = _get_db()
 
     # Example: Uzbekistan sources + language
-    lang = "am"
+    lang = "ne"
      #lan = az, uz, ka, ne, sw, sr, am
     sources = db.sources.distinct(
         "source_domain",
-        filter={"include": True, "primary_location": {"$in": ["ETH"]}},
+        filter={"include": True, "primary_location": {"$in": ["NPL"]}},
     )
     print(f"[INFO] {len(sources)} sources found for lang={lang}: {sources}")
 

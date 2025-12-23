@@ -94,7 +94,8 @@ class EventClassifier:
                                             # 'MEX','LBR','MDA','SRB','LKA','KGZ','PHL'
                                             # 'UZB','DOM','BLR','AGO','XKX','ALB','MKD','BFA','CMR'
                                             # 'ETH'
-                                            'KAZ','MWI','MRT','JAM','NAM','NGA','MYS'
+                                            # 'KAZ','MWI','MRT','JAM','NAM','NGA','MYS'
+                                            'MAR','NER','PAK','NPL'
                                              
                                              ]}
             }
