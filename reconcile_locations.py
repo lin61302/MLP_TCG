@@ -3805,7 +3805,7 @@ if __name__ == "__main__":
             'UKR', 'ZWE', 'MRT', 'ZMB', 'XKX', 'NER', 'JAM', 'HND', 'PHL', 'GHA', 'RWA', 'GTM', 'BLR', 'KHM', 'COD',
             'TUR', 'BGD', 'SLV', 'ZAF', 'TUN', 'IDN', 'NIC', 'AGO', 'ARM', 'LKA', 'MYS', 'CMR', 'HUN', 'MWI', 'UZB',
             'IND', 'MOZ', 'AZE', 'KGZ', 'MDA', 'KAZ', 'PER', 'DZA', 'MKD', 'SSD', 'LBR', 'PAK', 'NPL', 'NAM', 'BFA',
-            'DOM', 'TLS', 'SLB', 'CRI', 'PAN'
+            'DOM', 'TLS', 'SLB', 'CRI', 'PAN','MEX'
         ],
         kb_path="/home/diego/peace/KB_DF_final_V1.csv",
         start_year=2013,
