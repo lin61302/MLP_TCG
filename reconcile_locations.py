@@ -1862,7 +1862,10 @@ from datetime import datetime, timezone, timedelta, time as dtime
 from typing import Dict, Any, Tuple, List, Set, Optional
 
 import pandas as pd
+import random
+import pymongo
 from pymongo import MongoClient
+from pymongo.errors import AutoReconnect, NetworkTimeout, ConnectionFailure, OperationFailure, PyMongoError
 from rapidfuzz import process, fuzz
 
 
@@ -2827,7 +2830,7 @@ def reconcile_location(
         return updated, "Directional-only term (skipped)", {"method": "direction_skip", "match": None}
 
     # 1) If it looks like a country mention (and resolvable), resolve admin0
-    locally_country_like = (raw_level_norm in {"country", "nation", "admin0", "level0", "national"}) or KBIndex.is_admin0_name(kb_index, loc_name)
+    locally_country_like = (raw_level_norm in {"country", "nation", "admin0", "level0", "national"}) or kb_index.is_admin0_name(loc_name)
     if locally_country_like:
         # Prefer CLiFF ISO if it explicitly lists this name AND is not untrusted
         iso_by_name = kb_index.cliff_isos_for_name(loc_name, cliff_context)
@@ -3626,6 +3629,52 @@ def run_daily_window(
 
         # loop continues; it will sleep until the next window automatically
 
+def safe_update_one(
+    collection,
+    doc_id,
+    update_doc,
+    stop_at: Optional[datetime] = None,
+    max_tries: int = 6,
+) -> None:
+    """
+    Robust update_one with retries for transient network issues and graceful handling
+    of OperationCancelled. Designed for long-running overnight jobs.
+
+    - Retries: AutoReconnect, NetworkTimeout, ConnectionFailure, OperationFailure
+    - Also retries OperationCancelled unless stop_at has been reached.
+    - Exponential backoff + jitter.
+    """
+    base_sleep = 0.5
+
+    for attempt in range(1, max_tries + 1):
+        # Avoid starting a write if the run window has ended.
+        if stop_at and datetime.now() >= stop_at:
+            raise pymongo.errors._OperationCancelled("stop_at reached before write")
+
+        try:
+            collection.update_one({"_id": doc_id}, {"$set": update_doc})
+            return
+
+        except pymongo.errors._OperationCancelled:
+            # If the window ended, treat as clean shutdown.
+            if stop_at and datetime.now() >= stop_at:
+                raise
+            # Otherwise retry (transient cancel).
+            if attempt == max_tries:
+                raise
+
+        except (AutoReconnect, NetworkTimeout, ConnectionFailure, OperationFailure) as e:
+            if attempt == max_tries:
+                raise
+
+        except PyMongoError:
+            # Unknown pymongo error: don't loop forever.
+            raise
+
+        # Exponential backoff + jitter
+        sleep_s = min(20.0, base_sleep * (2 ** (attempt - 1))) * (0.8 + 0.4 * random.random())
+        time.sleep(sleep_s)
+
 
 # =============================================================================
 # Runner
@@ -3778,7 +3827,20 @@ class ReconcileRunner:
                     }
 
                     if not self.dry_run:
-                        collection.update_one({"_id": doc_id}, {"$set": update_doc})
+                        try:
+                            safe_update_one(collection, doc_id, update_doc, stop_at=stop_at, max_tries=6)
+
+                        except pymongo.errors._OperationCancelled:
+                            # This is the exact crash you saw; treat as clean stop when window ends.
+                            print(f"⏰ Write cancelled (likely stop window / interruption). Stopping cleanly at _id={doc_id}.")
+                            return True
+
+                        except Exception as e:
+                            # Don't crash the whole job on a single doc.
+                            # Log and continue.
+                            print(f"⚠️ update_one failed after retries: _id={doc_id} err={type(e).__name__}: {e}")
+                            continue
+
 
                 print(f"✅ Done {collection_name}: processed={processed}, revisit_docs={revisit_docs}/{processed}")
 
