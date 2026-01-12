@@ -372,7 +372,9 @@ if __name__ == "__main__":
             # 'TUR', 'BGD', 'SLV', 'ZAF', 'TUN', 'IDN', 'NIC', 'AGO', 'ARM', 'LKA', 'MYS', 'CMR', 'HUN', 'MWI', 'UZB',
             # 'IND', 'MOZ', 'AZE', 'KGZ', 'MDA', 'KAZ', 'PER', 'DZA', 'MKD', 'SSD', 'LBR', 'PAK', 'NPL', 'NAM', 'BFA',
             # 'DOM', 'TLS', 'SLB', 'CRI', 'PAN'
-            'KAZ','MWI','MRT','JAM','NAM','NGA','MYS'
+            # 'KAZ','MWI','MRT','JAM','NAM','NGA','MYS'
+            # 'KAZ','MWI','MRT','JAM','NAM','NGA','MYS','MAR','NPL','NER','PAK'
+            'LBR','ZWE','ARM','ZMB','BLR','SLV'
                     ] ,
                 
             #done: "ENV_GTM", "ENV_NGA", 'ENV_SLV', 'ENV_PAN', 'ENV_INT', 'ENV_CRI', 'ENV_SLB','ENV_NIC','ENV_BEN','ENV_PAK','ENV_HND' 
