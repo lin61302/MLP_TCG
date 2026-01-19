@@ -1,6 +1,3 @@
-# #!/usr/bin/env python3
-# # -*- coding: utf-8 -*-
-
 # """
 # reconcile_locations.py
 
@@ -16,20 +13,42 @@
 #   under a KB-grounded country but cannot produce a grounded admin1/admin2 ladder.
 # - De-duplicate when multiple surface forms map to the same (level, admin0, admin1, admin2) ladder.
 # - NEW: persist match evidence (which surface/token triggered the match) for debugging/aggregation.
+
+# -------------------------------------------------------------------------------
+# SCHEDULING (Python-only, no cron needed)
+# -------------------------------------------------------------------------------
+# By default, this script will ONLY run between 21:00 and 06:00 (local machine time).
+# Outside that window, it will sleep until 21:00.
+
+# Env vars:
+#   RUN_SCHEDULED=1|0            (default: 1)
+#   RUN_WINDOW_START=HH:MM       (default: 21:00)
+#   RUN_WINDOW_END=HH:MM         (default: 06:00)
+
+# Optional chunking (run/pause cycles inside the window):
+#   RUN_CHUNK_MINUTES=120        (run N minutes, then stop_at triggers)
+#   RUN_PAUSE_MINUTES=15         (sleep M minutes between chunks)
+
+# Optional:
+#   RUN_ONCE=1                   (run only for the current/next window, then exit)
 # """
 
 # import os
 # import re
 # import json
 # import ast
+# import time
 # import unicodedata
 # from dataclasses import dataclass
 # from collections import defaultdict
-# from datetime import datetime, timezone
+# from datetime import datetime, timezone, timedelta, time as dtime
 # from typing import Dict, Any, Tuple, List, Set, Optional
 
 # import pandas as pd
+# import random
+# import pymongo
 # from pymongo import MongoClient
+# from pymongo.errors import AutoReconnect, NetworkTimeout, ConnectionFailure, OperationFailure, PyMongoError
 # from rapidfuzz import process, fuzz
 
 
@@ -1024,10 +1043,18 @@
 #                 "admin1": "Unknown",
 #                 "admin2": "Unknown",
 #             }
-#             return updated, f"Country unresolved in KB ({method_detail})", {"method": "country_unresolved", "detail": method_detail, "match": {"evidence_term": loc_name, "kind": "surface", "matched_level": "ADMIN0", "matched_value": updated["admin0"], "score": None}}
+#             return updated, f"Country unresolved in KB ({method_detail})", {
+#                 "method": "country_unresolved",
+#                 "detail": method_detail,
+#                 "match": {"evidence_term": loc_name, "kind": "surface", "matched_level": "ADMIN0", "matched_value": updated["admin0"], "score": None},
+#             }
 
 #         updated = {"location_level": "ADMIN0", "admin0": chosen, "admin1": "Unknown", "admin2": "Unknown"}
-#         return updated, f"Country resolved via {method_detail}", {"method": "country_resolve", "detail": method_detail, "match": {"evidence_term": loc_name, "kind": "surface", "matched_level": "ADMIN0", "matched_value": chosen, "score": None}}
+#         return updated, f"Country resolved via {method_detail}", {
+#             "method": "country_resolve",
+#             "detail": method_detail,
+#             "match": {"evidence_term": loc_name, "kind": "surface", "matched_level": "ADMIN0", "matched_value": chosen, "score": None},
+#         }
 
 #     # 2) ISO constraints for this location
 #     iso_set, iso_source, iso_mode = derive_iso_constraints(loc_name, info, cliff_context, kb_index, doc_context_isos)
@@ -1163,7 +1190,15 @@
 #                             updated["admin1"] = row.get("Admin1") or updated.get("admin1", "Unknown")
 #                             updated["location_level"] = "ADMIN2"
 #                         note = f"Token match '{q}' → {lvl} '{val}' (sim={sim:.1f})"
-#                         match = {"evidence_term": q, "kind": v.kind, "matched_level": updated["location_level"], "matched_value": val, "score": 100.0, "iso_source": iso_source, "iso_set": sorted(iso_set) if iso_set else []}
+#                         match = {
+#                             "evidence_term": q,
+#                             "kind": v.kind,
+#                             "matched_level": updated["location_level"],
+#                             "matched_value": val,
+#                             "score": 100.0,
+#                             "iso_source": iso_source,
+#                             "iso_set": sorted(iso_set) if iso_set else [],
+#                         }
 #                         return updated, note, {"method": "token", "hit": (val, lvl), "query": q, "match": match, **dbg}
 
 #         # B) Fuzzy match (Admin1/Admin2 only)
@@ -1264,7 +1299,15 @@
 #             updated["location_level"] = "ADMIN2"
 #             note = f"Matched '{used_variant.text}' → Admin2 '{best_match}' (score={best_score:.1f})"
 
-#         match = {"evidence_term": used_variant.text, "kind": used_variant.kind, "matched_level": updated["location_level"], "matched_value": best_match, "score": float(best_score), "iso_source": iso_source, "iso_set": sorted(iso_set) if iso_set else []}
+#         match = {
+#             "evidence_term": used_variant.text,
+#             "kind": used_variant.kind,
+#             "matched_level": updated["location_level"],
+#             "matched_value": best_match,
+#             "score": float(best_score),
+#             "iso_source": iso_source,
+#             "iso_set": sorted(iso_set) if iso_set else [],
+#         }
 #         return updated, note, {"method": f"fuzzy_{match_level.lower()}", "score": best_score, "query": used_variant.text, "match": match, **dbg}
 
 #     # 7) If none matched: KEEP Gemini info (do not erase), and do not auto-promote level.
@@ -1641,6 +1684,182 @@
 
 
 # # =============================================================================
+# # Scheduling helpers (NEW)
+# # =============================================================================
+# def _parse_hhmm(s: str) -> dtime:
+#     """Parse 'HH:MM' into a datetime.time."""
+#     s = (s or "").strip()
+#     if not s:
+#         raise ValueError("Empty HH:MM")
+#     h, m = s.split(":")
+#     return dtime(hour=int(h), minute=int(m))
+
+
+# def _in_window(now_t: dtime, start_t: dtime, end_t: dtime) -> bool:
+#     """True if now_t is within the window [start_t, end_t), supporting crossing-midnight windows."""
+#     if start_t < end_t:
+#         return start_t <= now_t < end_t
+#     # crosses midnight
+#     return now_t >= start_t or now_t < end_t
+
+
+# def _next_occurrence(base: datetime, target_t: dtime) -> datetime:
+#     """Next datetime (>= base) at target_t (local time)."""
+#     candidate = base.replace(hour=target_t.hour, minute=target_t.minute, second=0, microsecond=0)
+#     if candidate <= base:
+#         candidate += timedelta(days=1)
+#     return candidate
+
+
+# def _window_end_datetime(now: datetime, start_t: dtime, end_t: dtime) -> datetime:
+#     """
+#     Given 'now' (local time) and a window, return the window end datetime.
+#     Assumes now is already inside the window.
+#     """
+#     if start_t < end_t:
+#         # same-day window
+#         end_dt = now.replace(hour=end_t.hour, minute=end_t.minute, second=0, microsecond=0)
+#         if end_dt <= now:
+#             end_dt += timedelta(days=1)
+#         return end_dt
+
+#     # crosses midnight (e.g., 21:00 -> 06:00)
+#     if now.time() >= start_t:
+#         # evening part → ends tomorrow morning
+#         return (now + timedelta(days=1)).replace(hour=end_t.hour, minute=end_t.minute, second=0, microsecond=0)
+
+#     # after midnight but before end_t → ends today morning
+#     return now.replace(hour=end_t.hour, minute=end_t.minute, second=0, microsecond=0)
+
+
+# def run_daily_window(
+#     runner,
+#     start_hhmm: str = "21:00",
+#     end_hhmm: str = "06:00",
+#     repeat: bool = True,
+#     check_every_seconds: int = 30,
+#     chunk_minutes: Optional[int] = None,
+#     pause_minutes: int = 0,
+# ):
+#     """
+#     Run runner only between start_hhmm and end_hhmm (local machine time).
+
+#     If chunk_minutes is provided, runner will run in N-minute chunks (each chunk uses stop_at),
+#     with an optional pause_minutes sleep in between chunks.
+
+#     runner.run(stop_at=...) MUST return:
+#       - True  => stopped because stop_at reached
+#       - False => completed normally (no more work)
+#     """
+#     start_t = _parse_hhmm(start_hhmm)
+#     end_t = _parse_hhmm(end_hhmm)
+
+#     while True:
+#         now = datetime.now()  # local time
+
+#         if not _in_window(now.time(), start_t, end_t):
+#             next_start = _next_occurrence(now, start_t)
+#             print(f"[scheduler] Outside window. Sleeping until {next_start} (local time).")
+#             while True:
+#                 now2 = datetime.now()
+#                 if _in_window(now2.time(), start_t, end_t):
+#                     break
+#                 remaining = (next_start - now2).total_seconds()
+#                 if remaining <= 0:
+#                     break
+#                 time.sleep(min(check_every_seconds, max(1.0, remaining)))
+#             continue
+
+#         # Inside window
+#         now = datetime.now()
+#         window_end = _window_end_datetime(now, start_t, end_t)
+#         print(f"[scheduler] In window. Running until {window_end} (local time).")
+
+#         if chunk_minutes and chunk_minutes > 0:
+#             # Run in chunks
+#             while datetime.now() < window_end:
+#                 chunk_end = datetime.now() + timedelta(minutes=int(chunk_minutes))
+#                 stop_at = min(window_end, chunk_end)
+
+#                 stopped_by_time = runner.run(stop_at=stop_at)
+
+#                 # If runner finished all work early, do NOT keep hammering the DB; sleep until window end.
+#                 if not stopped_by_time:
+#                     remaining = (window_end - datetime.now()).total_seconds()
+#                     if remaining > 0:
+#                         print(f"[scheduler] Work completed early. Sleeping until window end ({window_end}).")
+#                         time.sleep(min(remaining, 3600))  # sleep up to 1h; then re-check
+#                         # continue sleeping in loop
+#                         continue
+#                     break
+
+#                 if pause_minutes and pause_minutes > 0 and datetime.now() < window_end:
+#                     print(f"[scheduler] Pausing for {pause_minutes} minute(s).")
+#                     time.sleep(int(pause_minutes) * 60)
+#         else:
+#             # Run continuously until window end
+#             stopped_by_time = runner.run(stop_at=window_end)
+#             if not stopped_by_time:
+#                 # Completed early: sleep until window end to avoid looping
+#                 remaining = (window_end - datetime.now()).total_seconds()
+#                 if remaining > 0:
+#                     print(f"[scheduler] Work completed early. Sleeping until window end ({window_end}).")
+#                     time.sleep(min(remaining, 3600))
+
+#         if not repeat:
+#             print("[scheduler] Completed one scheduled window. Exiting.")
+#             return
+
+#         # loop continues; it will sleep until the next window automatically
+
+# def safe_update_one(
+#     collection,
+#     doc_id,
+#     update_doc,
+#     stop_at: Optional[datetime] = None,
+#     max_tries: int = 6,
+# ) -> None:
+#     """
+#     Robust update_one with retries for transient network issues and graceful handling
+#     of OperationCancelled. Designed for long-running overnight jobs.
+
+#     - Retries: AutoReconnect, NetworkTimeout, ConnectionFailure, OperationFailure
+#     - Also retries OperationCancelled unless stop_at has been reached.
+#     - Exponential backoff + jitter.
+#     """
+#     base_sleep = 0.5
+
+#     for attempt in range(1, max_tries + 1):
+#         # Avoid starting a write if the run window has ended.
+#         if stop_at and datetime.now() >= stop_at:
+#             raise pymongo.errors._OperationCancelled("stop_at reached before write")
+
+#         try:
+#             collection.update_one({"_id": doc_id}, {"$set": update_doc})
+#             return
+
+#         except pymongo.errors._OperationCancelled:
+#             # If the window ended, treat as clean shutdown.
+#             if stop_at and datetime.now() >= stop_at:
+#                 raise
+#             # Otherwise retry (transient cancel).
+#             if attempt == max_tries:
+#                 raise
+
+#         except (AutoReconnect, NetworkTimeout, ConnectionFailure, OperationFailure) as e:
+#             if attempt == max_tries:
+#                 raise
+
+#         except PyMongoError:
+#             # Unknown pymongo error: don't loop forever.
+#             raise
+
+#         # Exponential backoff + jitter
+#         sleep_s = min(20.0, base_sleep * (2 ** (attempt - 1))) * (0.8 + 0.4 * random.random())
+#         time.sleep(sleep_s)
+
+
+# # =============================================================================
 # # Runner
 # # =============================================================================
 # @dataclass
@@ -1674,7 +1893,12 @@
 #             if doc.get("source_domain")
 #         ]
 
-#     def run(self):
+#     def run(self, stop_at: Optional[datetime] = None) -> bool:
+#         """
+#         Returns:
+#           True  => stopped because stop_at was reached
+#           False => completed normally (no stop requested / or finished work early)
+#         """
 #         loc_domains = self._source_domains_for_countries()
 
 #         # Match docs that have at least one of the two fields
@@ -1699,6 +1923,10 @@
 
 #         for year in range(self.start_year, self.end_year + 1):
 #             for month in range(1, 13):
+#                 if stop_at and datetime.now() >= stop_at:
+#                     print(f"⏰ Stop time reached ({stop_at}). Exiting run() cleanly.")
+#                     return True
+
 #                 if year == self.end_year and month > self.end_month:
 #                     break
 
@@ -1730,6 +1958,10 @@
 #                 processed = 0
 
 #                 for doc in cursor:
+#                     if stop_at and datetime.now() >= stop_at:
+#                         print(f"⏰ Stop time reached ({stop_at}) during {collection_name}. Stopping cleanly.")
+#                         return True
+
 #                     processed += 1
 #                     doc_id = doc["_id"]
 
@@ -1778,16 +2010,36 @@
 #                     }
 
 #                     if not self.dry_run:
-#                         collection.update_one({"_id": doc_id}, {"$set": update_doc})
+#                         try:
+#                             safe_update_one(collection, doc_id, update_doc, stop_at=stop_at, max_tries=6)
+
+#                         except pymongo.errors._OperationCancelled:
+#                             # This is the exact crash you saw; treat as clean stop when window ends.
+#                             print(f"⏰ Write cancelled (likely stop window / interruption). Stopping cleanly at _id={doc_id}.")
+#                             return True
+
+#                         except Exception as e:
+#                             # Don't crash the whole job on a single doc.
+#                             # Log and continue.
+#                             print(f"⚠️ update_one failed after retries: _id={doc_id} err={type(e).__name__}: {e}")
+#                             continue
+
 
 #                 print(f"✅ Done {collection_name}: processed={processed}, revisit_docs={revisit_docs}/{processed}")
 
+#         return False
+
 
 # if __name__ == "__main__":
-#     # For security, set MONGO_URI via environment variable.
-#     MONGO_URI = os.environ.get("MONGO_URI", "mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true")
+#     # For security, set MONGO_URI via environment variable (do NOT hardcode credentials).
+#     # MONGO_URI = os.environ.get("MONGO_URI")
+#     MONGO_URI = "mongodb://zungru:balsas.rial.tanoaks.schmoe.coffing@db-wibbels.sas.upenn.edu/?authSource=ml4p&tls=true"
 #     if not MONGO_URI:
-#         raise RuntimeError("Please set MONGO_URI in your environment (do not hardcode credentials).")
+#         raise RuntimeError(
+#             "Please set MONGO_URI in your environment.\n"
+#             "Example:\n"
+#             "  export MONGO_URI='mongodb://USER:PASSWORD@HOST/?authSource=ml4p&tls=true'\n"
+#         )
 #     DB_NAME = os.environ.get("MONGO_DB", "ml4p")
 
 #     runner = ReconcileRunner(
@@ -1798,22 +2050,50 @@
 #             'UKR', 'ZWE', 'MRT', 'ZMB', 'XKX', 'NER', 'JAM', 'HND', 'PHL', 'GHA', 'RWA', 'GTM', 'BLR', 'KHM', 'COD',
 #             'TUR', 'BGD', 'SLV', 'ZAF', 'TUN', 'IDN', 'NIC', 'AGO', 'ARM', 'LKA', 'MYS', 'CMR', 'HUN', 'MWI', 'UZB',
 #             'IND', 'MOZ', 'AZE', 'KGZ', 'MDA', 'KAZ', 'PER', 'DZA', 'MKD', 'SSD', 'LBR', 'PAK', 'NPL', 'NAM', 'BFA',
-#             'DOM', 'TLS', 'SLB', 'CRI', 'PAN'
+#             'DOM', 'TLS', 'SLB', 'CRI', 'PAN','MEX'
+#             # 'GTM','SLV','NIC','HND', 'SLB', 'CRI',' PAN'
 #         ],
 #         kb_path="/home/diego/peace/KB_DF_final_V1.csv",
-#         start_year=2012,
+#         start_year=2013,
 #         end_year=2026,
 #         end_month=7,
 #         threshold=85,
 #         dry_run=False,
 #         debug_rows_per_collection=3,
-#         force=True,              # set False to only fill missing
+#         force=False,              # set False to only fill missing (better for nightly stop/resume)
 #         include_cliff_only=True, # conservative: exact KB matches only
 #     )
 
-#     runner.run()
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+#     RUN_SCHEDULED = os.environ.get("RUN_SCHEDULED", "1").strip().lower() in {"1", "true", "yes", "y"}
+#     WIN_START = os.environ.get("RUN_WINDOW_START", "21:00")
+#     WIN_END = os.environ.get("RUN_WINDOW_END", "06:00")
+
+#     RUN_ONCE = os.environ.get("RUN_ONCE", "0").strip().lower() in {"1", "true", "yes", "y"}
+
+#     # Optional chunking inside the window
+#     def _to_int_env(name: str, default: int) -> int:
+#         v = os.environ.get(name, "").strip()
+#         if not v:
+#             return default
+#         try:
+#             return int(v)
+#         except Exception:
+#             return default
+
+#     CHUNK_MIN = _to_int_env("RUN_CHUNK_MINUTES", 0)
+#     PAUSE_MIN = _to_int_env("RUN_PAUSE_MINUTES", 0)
+
+#     if RUN_SCHEDULED:
+#         run_daily_window(
+#             runner,
+#             start_hhmm=WIN_START,
+#             end_hhmm=WIN_END,
+#             repeat=(not RUN_ONCE),
+#             chunk_minutes=(CHUNK_MIN if CHUNK_MIN > 0 else None),
+#             pause_minutes=(PAUSE_MIN if PAUSE_MIN > 0 else 0),
+#         )
+#     else:
+#         runner.run()
 
 """
 reconcile_locations.py
@@ -1860,6 +2140,7 @@ from dataclasses import dataclass
 from collections import defaultdict
 from datetime import datetime, timezone, timedelta, time as dtime
 from typing import Dict, Any, Tuple, List, Set, Optional
+from functools import lru_cache
 
 import pandas as pd
 import random
@@ -2017,17 +2298,25 @@ FEATURE_KEYWORDS = {
 }
 
 
+# --- SPEEDUP: normalize_for_match cache + compiled regex (output-identical) ---
+_RE_NONWORD = re.compile(r"[^\w\s]")
+_RE_WS = re.compile(r"\s+")
+
+@lru_cache(maxsize=300_000)
+def _normalize_cached(s: str) -> str:
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    s = s.lower()
+    s = _RE_NONWORD.sub(" ", s)
+    s = _RE_WS.sub(" ", s).strip()
+    return s
+
+
 def normalize_for_match(s: str) -> str:
     """Accent/punctuation tolerant normalization for matching."""
     if s is None:
         return ""
-    s = str(s)
-    s = unicodedata.normalize("NFKD", s)
-    s = "".join(ch for ch in s if not unicodedata.combining(ch))
-    s = s.lower()
-    s = re.sub(r"[^\w\s]", " ", s)
-    s = re.sub(r"\s+", " ", s).strip()
-    return s
+    return _normalize_cached(str(s))
 
 
 def _clean_str(v) -> str:
@@ -2143,6 +2432,10 @@ def sanitize_location_info(info: dict) -> dict:
 class KBIndex:
     LEVELS = ["Admin0", "Admin1", "Admin2"]
 
+    # SPEEDUP: compile once instead of per call
+    _ISO3_RE = re.compile(r"^[A-Z]{3}$")
+    _BAD_ISOS = {"NONE", "UNK", "UNKNOWN", "NULL", "N/A"}
+
     def __init__(self, kb_df: pd.DataFrame):
         kb = kb_df.copy()
         for col in ["Admin0", "Admin1", "Admin2", "Admin0_ISO3"]:
@@ -2152,6 +2445,24 @@ class KBIndex:
 
         kb["Admin0_ISO3"] = kb["Admin0_ISO3"].str.upper()
         self.kb = kb
+
+        # SPEEDUP: pre-normalized columns for vectorized filters + fast membership maps
+        kb["Admin0_norm"] = kb["Admin0"].map(normalize_for_match)
+        kb["Admin1_norm"] = kb["Admin1"].map(normalize_for_match)
+        kb["Admin2_norm"] = kb["Admin2"].map(normalize_for_match)
+
+        self.admin0_norm_to_isos: Dict[str, Set[str]] = defaultdict(set)
+        self.pair_norm_to_isos: Dict[Tuple[str, str], Set[str]] = defaultdict(set)
+        self.triple_norm_to_isos: Dict[Tuple[str, str, str], Set[str]] = defaultdict(set)
+
+        for a0n, a1n, a2n, iso in zip(kb["Admin0_norm"], kb["Admin1_norm"], kb["Admin2_norm"], kb["Admin0_ISO3"]):
+            iso3 = str(iso).upper().strip()
+            if a0n:
+                self.admin0_norm_to_isos[a0n].add(iso3)
+            if a0n and a1n:
+                self.pair_norm_to_isos[(a0n, a1n)].add(iso3)
+            if a0n and a1n and a2n:
+                self.triple_norm_to_isos[(a0n, a1n, a2n)].add(iso3)
 
         # ISO -> Admin0 (choose most frequent name)
         self.iso_to_admin0: Dict[str, str] = {}
@@ -2199,16 +2510,91 @@ class KBIndex:
             for iso, s in tmp_iso_sets[col].items():
                 self.choices_by_iso[col][iso] = sorted(s)
 
+        # SPEEDUP: pre-normalized choice lists + cached ISO unions (output-identical)
+        self.choices_global_norm = {
+            col: [normalize_for_match(x) for x in self.choices_global[col]]
+            for col in self.LEVELS
+        }
+        # (col, iso_tuple) -> (choices_sorted, choices_sorted_norm)
+        self._union_choice_cache: Dict[Tuple[str, Tuple[str, ...]], Tuple[List[str], List[str]]] = {}
+
+    def _get_choices_lists(
+        self,
+        col: str,
+        iso_tuple: Tuple[str, ...],
+        iso_filter_mode: str,
+    ) -> Tuple[Optional[List[str]], Optional[List[str]]]:
+        """
+        Return (choices, choices_norm) for a column, optionally restricted to an ISO tuple.
+        - If iso_tuple is empty => global lists
+        - If union is empty:
+            strict => (None, None)
+            soft   => global lists
+        """
+        if not iso_tuple:
+            return self.choices_global[col], self.choices_global_norm[col]
+
+        key = (col, iso_tuple)
+        cached = self._union_choice_cache.get(key)
+        if cached is None:
+            union = set()
+            for iso in iso_tuple:
+                union.update(self.choices_by_iso[col].get(iso, []))
+            choices = sorted(union)
+            choices_norm = [normalize_for_match(x) for x in choices]
+            cached = (choices, choices_norm)
+            self._union_choice_cache[key] = cached
+
+        choices, choices_norm = cached
+        if not choices:
+            if iso_filter_mode == "strict":
+                return None, None
+            return self.choices_global[col], self.choices_global_norm[col]
+
+        return choices, choices_norm
+
+    def _extract_one_norm(
+        self,
+        query: str,
+        choices: List[str],
+        choices_norm: List[str],
+        min_score: Optional[float] = None,
+    ) -> Tuple[Optional[str], float]:
+        """
+        extractOne on pre-normalized candidates.
+        Returns (original_choice, score).
+
+        Output is identical to using processor=normalize_for_match, because:
+          - query is normalized the same way
+          - choices_norm preserves the original choices order 1:1
+          - score is computed on the same normalized strings
+          - tie-breaking is preserved (same iteration order)
+        """
+        qn = normalize_for_match(query)
+        if not qn:
+            return None, 0.0
+
+        m = process.extractOne(
+            qn,
+            choices_norm,
+            scorer=fuzz.WRatio,
+            processor=None,
+            score_cutoff=min_score,
+        )
+        if not m:
+            return None, 0.0
+
+        _, score, idx = m
+        return choices[idx], float(score)
+
     @staticmethod
     def get_iso_set(cliff_context) -> Set[str]:
-        ISO3_RE = re.compile(r"^[A-Z]{3}$")
-        BAD_ISOS = {"NONE", "UNK", "UNKNOWN", "NULL", "N/A"}
         if not isinstance(cliff_context, dict):
             return set()
         out = set()
         for k in cliff_context.keys():
             iso = str(k).upper().strip()
-            if ISO3_RE.match(iso) and iso not in BAD_ISOS:
+            if KBIndex._ISO3_RE.match(iso) and iso not in KBIndex._BAD_ISOS:
                 out.add(iso)
         return out
 
@@ -2260,23 +2646,14 @@ class KBIndex:
             val = sorted(self.norm_to_values["Admin0"][norm])[0]
             return val, 100.0, "exact"
 
-        isos = sorted({x.upper() for x in (allowed_isos or set()) if x})
-        choices = self.choices_global["Admin0"]
-        if isos:
-            union = []
-            for iso in isos:
-                union.extend(self.choices_by_iso["Admin0"].get(iso, []))
-            if union:
-                choices = sorted(set(union))
+        iso_tuple = tuple(sorted({x.upper() for x in (allowed_isos or set()) if x}))
+        choices, choices_norm = self._get_choices_lists("Admin0", iso_tuple, iso_filter_mode="soft")
+        if not choices:
+            return None, 0.0, "no_match"
 
-        m = process.extractOne(
-            raw,
-            choices,
-            scorer=fuzz.WRatio,
-            processor=normalize_for_match,
-        )
-        if m and float(m[1]) >= float(min_score):
-            return m[0], float(m[1]), "fuzzy"
+        best, score = self._extract_one_norm(raw, choices, choices_norm, min_score=float(min_score))
+        if best and float(score) >= float(min_score):
+            return best, float(score), "fuzzy"
         return None, 0.0, "no_match"
 
     def token_frequency(self, token: str, cols: Optional[List[str]] = None) -> int:
@@ -2347,13 +2724,16 @@ class KBIndex:
                 if len(cand2) > 0:
                     cand = cand2
 
+        # SPEEDUP: use pre-normalized columns instead of per-row lambdas (output-identical)
         if prefer_admin0 and prefer_admin0 not in {"Unknown", "", None}:
-            cand2 = cand[cand["Admin0"].apply(lambda x: normalize_for_match(x) == normalize_for_match(prefer_admin0))]
+            pref0 = normalize_for_match(prefer_admin0)
+            cand2 = cand[cand["Admin0_norm"] == pref0]
             if len(cand2) > 0:
                 cand = cand2
 
         if prefer_admin1 and prefer_admin1 not in {"Unknown", "", None}:
-            cand2 = cand[cand["Admin1"].apply(lambda x: normalize_for_match(x) == normalize_for_match(prefer_admin1))]
+            pref1 = normalize_for_match(prefer_admin1)
+            cand2 = cand[cand["Admin1_norm"] == pref1]
             if len(cand2) > 0:
                 cand = cand2
 
@@ -2369,32 +2749,18 @@ class KBIndex:
         """Best fuzzy match over given cols (+ optional ISO filter)."""
         cols = cols or self.LEVELS
         best_val, best_score, best_col = None, 0.0, None
-        iso_list = sorted({x.upper() for x in (allowed_isos or set()) if x})
+        iso_tuple = tuple(sorted({x.upper() for x in (allowed_isos or set()) if x}))
 
         for col in cols:
-            choices = self.choices_global[col]
-            if iso_list:
-                union = []
-                for iso in iso_list:
-                    union.extend(self.choices_by_iso[col].get(iso, []))
-                if union:
-                    choices = sorted(set(union))
-                elif iso_filter_mode == "strict":
-                    continue  # enforce: no choices => no match allowed
-
-            if not choices:
+            choices, choices_norm = self._get_choices_lists(col, iso_tuple, iso_filter_mode=iso_filter_mode)
+            if choices is None or not choices:
                 continue
 
-            m = process.extractOne(
-                name,
-                choices,
-                scorer=fuzz.WRatio,
-                processor=normalize_for_match,
-            )
-            if m and float(m[1]) > best_score:
-                best_val, best_score, best_col = m[0], float(m[1]), col
+            val, score = self._extract_one_norm(name, choices, choices_norm, min_score=None)
+            if val and float(score) > best_score:
+                best_val, best_score, best_col = val, float(score), col
 
-        return best_val, best_score, best_col
+        return best_val, float(best_score), best_col
 
 
 # =============================================================================
@@ -2403,45 +2769,36 @@ class KBIndex:
 def admin0_isos(admin0: str, kb_index: KBIndex) -> Set[str]:
     if admin0 in {None, "", "Unknown"}:
         return set()
-    norm = normalize_for_match(admin0)
-    # fast path: exact normalized Admin0 hit
-    if norm in kb_index.norm_to_values["Admin0"]:
-        canonical = sorted(kb_index.norm_to_values["Admin0"][norm])[0]
-        rows = kb_index.kb[kb_index.kb["Admin0"].apply(lambda x: normalize_for_match(x) == normalize_for_match(canonical))]
-        return set(rows["Admin0_ISO3"].dropna().astype(str).str.upper().unique().tolist())
-    # fallback scan (rare)
-    rows = kb_index.kb[kb_index.kb["Admin0"].apply(lambda x: normalize_for_match(x) == norm)]
-    return set(rows["Admin0_ISO3"].dropna().astype(str).str.upper().unique().tolist())
+    # SPEEDUP: O(1) lookup (output-identical to previous scans)
+    return set(kb_index.admin0_norm_to_isos.get(normalize_for_match(admin0), set()))
 
 
 def is_kb_pair(admin0: str, admin1: str, kb_index: KBIndex, allowed_isos: Optional[Set[str]] = None) -> bool:
     if admin0 in {"Unknown", "", None} or admin1 in {"Unknown", "", None}:
         return False
-    a0n = normalize_for_match(admin0)
-    a1n = normalize_for_match(admin1)
-    rows = kb_index.kb[
-        (kb_index.kb["Admin0"].apply(lambda x: normalize_for_match(x) == a0n)) &
-        (kb_index.kb["Admin1"].apply(lambda x: normalize_for_match(x) == a1n))
-    ]
+    # SPEEDUP: O(1) lookup (output-identical to previous scans)
+    key = (normalize_for_match(admin0), normalize_for_match(admin1))
+    isos = kb_index.pair_norm_to_isos.get(key)
+    if not isos:
+        return False
     if allowed_isos:
-        rows = rows[rows["Admin0_ISO3"].isin({x.upper() for x in allowed_isos})]
-    return len(rows) > 0
+        allowed = {x.upper() for x in allowed_isos}
+        return any(i in allowed for i in isos)
+    return True
 
 
 def is_kb_triple(admin0: str, admin1: str, admin2: str, kb_index: KBIndex, allowed_isos: Optional[Set[str]] = None) -> bool:
     if admin0 in {"Unknown", "", None} or admin1 in {"Unknown", "", None} or admin2 in {"Unknown", "", None}:
         return False
-    a0n = normalize_for_match(admin0)
-    a1n = normalize_for_match(admin1)
-    a2n = normalize_for_match(admin2)
-    rows = kb_index.kb[
-        (kb_index.kb["Admin0"].apply(lambda x: normalize_for_match(x) == a0n)) &
-        (kb_index.kb["Admin1"].apply(lambda x: normalize_for_match(x) == a1n)) &
-        (kb_index.kb["Admin2"].apply(lambda x: normalize_for_match(x) == a2n))
-    ]
+    # SPEEDUP: O(1) lookup (output-identical to previous scans)
+    key = (normalize_for_match(admin0), normalize_for_match(admin1), normalize_for_match(admin2))
+    isos = kb_index.triple_norm_to_isos.get(key)
+    if not isos:
+        return False
     if allowed_isos:
-        rows = rows[rows["Admin0_ISO3"].isin({x.upper() for x in allowed_isos})]
-    return len(rows) > 0
+        allowed = {x.upper() for x in allowed_isos}
+        return any(i in allowed for i in isos)
+    return True
 
 
 # =============================================================================
@@ -3552,6 +3909,7 @@ def _window_end_datetime(now: datetime, start_t: dtime, end_t: dtime) -> datetim
 def run_daily_window(
     runner,
     start_hhmm: str = "21:00",
+    # end_hhmm: str = "06:00",
     end_hhmm: str = "06:00",
     repeat: bool = True,
     check_every_seconds: int = 30,
@@ -3629,6 +3987,7 @@ def run_daily_window(
 
         # loop continues; it will sleep until the next window automatically
 
+
 def safe_update_one(
     collection,
     doc_id,
@@ -3663,7 +4022,7 @@ def safe_update_one(
             if attempt == max_tries:
                 raise
 
-        except (AutoReconnect, NetworkTimeout, ConnectionFailure, OperationFailure) as e:
+        except (AutoReconnect, NetworkTimeout, ConnectionFailure, OperationFailure):
             if attempt == max_tries:
                 raise
 
@@ -3718,9 +4077,12 @@ class ReconcileRunner:
         """
         loc_domains = self._source_domains_for_countries()
 
+        # SPEEDUP: deduplicate domains (output-identical for $in semantics)
+        loc_domains = list(dict.fromkeys(loc_domains))
+
         # Match docs that have at least one of the two fields
         base_query = {
-            "source_domain": {"$in": loc_domains},
+            # "source_domain": {"$in": loc_domains},
             "environmental_binary.result": "Yes",
             "$or": [
                 {"env_classifier.env_max": {"$nin": ["-999", "environmental -999", None]}},
@@ -3769,7 +4131,7 @@ class ReconcileRunner:
                         "gemini_locations_normalized": 1,
                         "cliff_locations": 1,
                     },
-                )
+                ).batch_size(500)  # SPEEDUP: fewer network round trips
 
                 revisit_docs = 0
                 processed = 0
@@ -3841,7 +4203,6 @@ class ReconcileRunner:
                             print(f"⚠️ update_one failed after retries: _id={doc_id} err={type(e).__name__}: {e}")
                             continue
 
-
                 print(f"✅ Done {collection_name}: processed={processed}, revisit_docs={revisit_docs}/{processed}")
 
         return False
@@ -3863,15 +4224,15 @@ if __name__ == "__main__":
         uri=MONGO_URI,
         db_name=DB_NAME,
         countries=[
-            # 'ALB', 'BEN', 'COL', 'ECU', 'ETH', 'GEO', 'KEN', 'PRY', 'MLI', 'MAR', 'NGA', 'SRB', 'SEN', 'TZA', 'UGA',
-            # 'UKR', 'ZWE', 'MRT', 'ZMB', 'XKX', 'NER', 'JAM', 'HND', 'PHL', 'GHA', 'RWA', 'GTM', 'BLR', 'KHM', 'COD',
-            # 'TUR', 'BGD', 'SLV', 'ZAF', 'TUN', 'IDN', 'NIC', 'AGO', 'ARM', 'LKA', 'MYS', 'CMR', 'HUN', 'MWI', 'UZB',
-            # 'IND', 'MOZ', 'AZE', 'KGZ', 'MDA', 'KAZ', 'PER', 'DZA', 'MKD', 'SSD', 'LBR', 'PAK', 'NPL', 'NAM', 'BFA',
-            # 'DOM', 'TLS', 'SLB', 'CRI', 'PAN','MEX'
-            'GTM','SLV','NIC','HND', 'SLB', 'CRI',' PAN'
+            'ALB', 'BEN', 'COL', 'ECU', 'ETH', 'GEO', 'KEN', 'PRY', 'MLI', 'MAR', 'NGA', 'SRB', 'SEN', 'TZA', 'UGA',
+            'UKR', 'ZWE', 'MRT', 'ZMB', 'XKX', 'NER', 'JAM', 'HND', 'PHL', 'GHA', 'RWA', 'GTM', 'BLR', 'KHM', 'COD',
+            'TUR', 'BGD', 'SLV', 'ZAF', 'TUN', 'IDN', 'NIC', 'AGO', 'ARM', 'LKA', 'MYS', 'CMR', 'HUN', 'MWI', 'UZB',
+            'IND', 'MOZ', 'AZE', 'KGZ', 'MDA', 'KAZ', 'PER', 'DZA', 'MKD', 'SSD', 'LBR', 'PAK', 'NPL', 'NAM', 'BFA',
+            'DOM', 'TLS', 'SLB', 'CRI', 'PAN','MEX'
+            # 'GTM','SLV','NIC','HND', 'SLB', 'CRI',' PAN'
         ],
         kb_path="/home/diego/peace/KB_DF_final_V1.csv",
-        start_year=2013,
+        start_year=2012,
         end_year=2026,
         end_month=7,
         threshold=85,
@@ -3883,7 +4244,7 @@ if __name__ == "__main__":
 
     RUN_SCHEDULED = os.environ.get("RUN_SCHEDULED", "1").strip().lower() in {"1", "true", "yes", "y"}
     WIN_START = os.environ.get("RUN_WINDOW_START", "21:00")
-    WIN_END = os.environ.get("RUN_WINDOW_END", "06:00")
+    WIN_END = os.environ.get("RUN_WINDOW_END", "20:59")
 
     RUN_ONCE = os.environ.get("RUN_ONCE", "0").strip().lower() in {"1", "true", "yes", "y"}
 
