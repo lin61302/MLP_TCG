@@ -95,7 +95,8 @@ class EventClassifier:
                                                                                                                     # 'UZB','DOM','BLR','AGO','XKX','ALB','MKD','BFA','CMR'
                                                                                                                     # 'KAZ','MWI','MRT','JAM','NAM','NGA','MYS','MAR','NPL','NER','PAK'
                                                                                                                     # 'LBR','ZWE','ARM','ZMB','BLR','SLV'
-                                                                                                                    'PRY','DOM','ECU','LKA','SRB','NIC','KHM','MDA'
+                                                                                                                    # 'PRY','DOM','ECU','LKA','SRB','NIC','KHM','MDA'
+                                                                                                                    'KGZ','PAN','PER','MKD','KEN'
                                                                                                                    ]}})
         # source_domains = self.db.sources.distinct('source_domain', filter={'include' : True, 'major_international' : True})
         # source_domains += self.db.sources.distinct('source_domain', filter={'include' : True, 'major_regional' : True})

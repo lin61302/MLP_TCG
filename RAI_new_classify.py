@@ -86,7 +86,8 @@ class EventClassifier:
                         # 'ETH'
                         # 'KAZ','MWI','MRT','JAM','NAM','NGA','MYS','MAR','NPL','NER','PAK'
                         # 'LBR','ZWE','ARM','ZMB','BLR','SLV'
-                        'PRY','DOM','ECU','LKA','SRB','NIC','KHM','MDA'
+                        # 'PRY','DOM','ECU','LKA','SRB','NIC','KHM','MDA'
+                        'KGZ','PAN','PER','MKD','KEN'
                         
 
                         ]
